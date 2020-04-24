@@ -25,7 +25,6 @@
 #include <iostream>
 #include <atomic>
 #include "sp_midi.h"
-#include "cxxopts.hpp"
 #include "midiout.h"
 #include "oscin.h"
 #include "oscout.h"
@@ -64,10 +63,9 @@ static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProce
 }
 
 
-int sp_midi_send(const char* c_message, unsigned int size)
+void sp_midi_send(const char* c_message, unsigned int size)
 {
     oscInputProcessor->ProcessMessage(c_message, size);
-    return 0;
 }
 
 int sp_midi_init()
@@ -84,3 +82,47 @@ int sp_midi_init()
     }
     return 0;
 }
+
+void sp_midi_deinit()
+{
+    oscInputProcessor.reset(nullptr);
+}
+
+
+ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int ret = sp_midi_init();
+    return enif_make_int(env, ret);
+}
+
+ERL_NIF_TERM sp_midi_deinit_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    sp_midi_deinit();
+    return enif_make_int(env, 0);
+}
+
+ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{    
+    printf("Entering sp_midi_send_nif\n");
+    ErlNifBinary bin;
+    int ret = enif_inspect_binary(env, argv[0], &bin);
+    if (!ret)
+    {
+        printf("Error 1\n");
+        return 0;
+    }
+    const char *c_message = (char *)bin.data;
+    int size = bin.size;
+
+    sp_midi_send(c_message, size);
+    return enif_make_int(env, 0);
+}
+
+
+static ErlNifFunc nif_funcs[] = {
+    {"sp_midi_init", 0, sp_midi_init_nif},
+    {"sp_midi_deinit", 0, sp_midi_deinit_nif},
+    {"sp_midi_send", 1, sp_midi_send_nif}
+};
+
+ERL_NIF_INIT(complex6, nif_funcs, NULL, NULL, NULL, NULL);

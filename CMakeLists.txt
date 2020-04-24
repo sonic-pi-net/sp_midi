@@ -65,6 +65,7 @@ add_definitions(-DJUCE_ALSA_MIDI_NAME="sp_midi")
 
 if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0600 -DJUCER_VS2015_78A5022=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
+    include_directories("C:/Program Files/erl10.7/usr/include")
     target_link_libraries(sp_midi winmm)
 elseif(APPLE)
     add_definitions(-DNDEBUG=1 -DJUCER_XCODE_MAC_F6D2F4CF=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)

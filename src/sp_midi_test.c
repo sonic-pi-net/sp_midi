@@ -10,4 +10,6 @@ int main()
     getchar();
     sp_midi_send(osc_string_off, 32);
 
+    sp_midi_deinit();
+
 }
