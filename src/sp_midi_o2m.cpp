@@ -120,9 +120,9 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 
 static ErlNifFunc nif_funcs[] = {
-    {"sp_midi_init", 0, sp_midi_init_nif},
-    {"sp_midi_deinit", 0, sp_midi_deinit_nif},
-    {"sp_midi_send", 1, sp_midi_send_nif}
+    {"midi_init", 0, sp_midi_init_nif},
+    {"midi_deinit", 0, sp_midi_deinit_nif},
+    {"midi_send", 1, sp_midi_send_nif}
 };
 
-ERL_NIF_INIT(complex6, nif_funcs, NULL, NULL, NULL, NULL);
+ERL_NIF_INIT(sp_midi, nif_funcs, NULL, NULL, NULL, NULL);
