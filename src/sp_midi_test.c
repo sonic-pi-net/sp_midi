@@ -23,6 +23,18 @@ int main()
     }
     free(midi_outs);
 
+    int n_ins;
+    char** midi_ins = sp_midi_ins(&n_ins);
+    for (int i = 0; i < n_ins; i++) {
+        printf("%d: %s\n", i, midi_ins[i]);
+    }
+
+    for (int i = 0; i < n_ins; i++) {
+        free(midi_ins[i]);
+    }
+    free(midi_ins);
+
+
     sp_midi_send(osc_string_on, 32);
     getchar();
     sp_midi_send(osc_string_off, 32);

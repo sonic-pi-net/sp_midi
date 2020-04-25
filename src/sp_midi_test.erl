@@ -13,6 +13,13 @@ start() ->
 
     sp_midi:midi_init(),
 
+    INS = sp_midi:midi_ins(),
+    OUTS = sp_midi:midi_outs(),
+
+    io:fwrite("MIDI INs:~p~n", [INS]),
+
+    io:fwrite("MIDI OUTs:~p~n", [OUTS]),
+    
     io:fwrite("Sending note ON and waiting 3 seconds~n"),
     sp_midi:midi_send(Mon),
 
