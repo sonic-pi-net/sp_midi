@@ -40,16 +40,6 @@ static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
 using namespace std;
 
-void listAvailablePorts()
-{
-    auto outputs = MidiOut::getOutputNames();
-    cout << "Found " << outputs.size() << " MIDI outputs." << endl;
-    for (unsigned int i = 0; i < outputs.size(); i++) {
-        cout << "   (" << i << "): " << outputs[i] << endl;
-    }
-}
-
-
 static mutex g_oscinMutex;
 
 static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProcessor)
@@ -88,7 +78,23 @@ void sp_midi_deinit()
     oscInputProcessor.reset(nullptr);
 }
 
+char **sp_midi_outs(int *n_list)
+{
+    auto outputs = MidiOut::getOutputNames();
+    char **c_str_list;
 
+    c_str_list = (char **)malloc(outputs.size() * sizeof(char *));
+    for (int i = 0; i < outputs.size(); i++){
+        c_str_list[i] = (char *)malloc((outputs[i].size() + 1) * sizeof(char));
+        strcpy(c_str_list[i], outputs[i].c_str());
+    }
+
+    *n_list = outputs.size();
+    return c_str_list;
+}
+
+
+// NIF functions
 ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int ret = sp_midi_init();
@@ -118,11 +124,32 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return enif_make_int(env, 0);
 }
 
+ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int n_midi_outs;    
+    char **midi_outs = sp_midi_outs(&n_midi_outs);
+    ERL_NIF_TERM *terms = (ERL_NIF_TERM *)malloc(n_midi_outs * sizeof(ERL_NIF_TERM));
+    for (int i = 0; i < n_midi_outs; i++){
+        terms[i] = enif_make_string(env, midi_outs[i], ERL_NIF_LATIN1);
+    }
+
+    ERL_NIF_TERM string_array = enif_make_list_from_array(env, terms, n_midi_outs);
+
+    for (int i = 0; i < n_midi_outs; i++){
+        free(midi_outs[i]);
+    }
+    free(midi_outs);
+    free(terms);
+    
+    return string_array;
+}
+
 
 static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
-    {"midi_send", 1, sp_midi_send_nif}
+    {"midi_send", 1, sp_midi_send_nif},
+    {"midi_outs", 0, sp_midi_outs_nif}
 };
 
 ERL_NIF_INIT(sp_midi, nif_funcs, NULL, NULL, NULL, NULL);
