@@ -1,5 +1,5 @@
 -module(sp_midi).
--export([midi_init/0, midi_deinit/0, midi_send/1, midi_ins/0, midi_outs/0]).
+-export([midi_init/0, midi_deinit/0, midi_send/1, midi_ins/0, midi_outs/0, have_my_pid/0]).
 -on_load(init/0).
 
 init() ->
@@ -14,5 +14,7 @@ midi_send(_X) ->
 midi_ins() ->
     exit(nif_library_not_loaded).
 midi_outs() ->
+    exit(nif_library_not_loaded).
+have_my_pid() ->
     exit(nif_library_not_loaded).
 

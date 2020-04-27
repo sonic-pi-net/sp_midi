@@ -1,4 +1,3 @@
-#include "sp_midi.h"
 // MIT License
 
 // Copyright (c) 2016-2020 Luis Lloret
@@ -31,6 +30,7 @@
 #include "oscin.h"
 #include "oscout.h"
 #include "oscinprocessor.h"
+#include "midiinprocessor.h"
 #include "osc/OscOutboundPacketStream.h"
 #include "version.h"
 #include "utils.h"
@@ -38,9 +38,15 @@
 
 static const int MONITOR_LEVEL = 0;
 
+using namespace std;
+
+// MIDI out
 static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
-using namespace std;
+// MIDI in
+static vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
+
+static ErlNifPid midi_process_pid;
 
 static mutex g_oscinMutex;
 
@@ -55,6 +61,23 @@ static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProce
 }
 
 
+void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProcessors)
+{
+    // Should we open all devices, or just the ones passed as parameters?
+    vector<string> midiInputsToOpen = MidiIn::getInputNames();
+
+    for (const auto& input : midiInputsToOpen) {
+        try {
+            auto midiInputProcessor = make_unique<MidiInProcessor>(input, false);
+            midiInputProcessors.push_back(std::move(midiInputProcessor));
+        } catch (const std::out_of_range&) {
+            cout << "The device " << input << " does not exist";
+            throw;
+        }
+    }
+}
+
+
 void sp_midi_send(const char* c_message, unsigned int size)
 {
     oscInputProcessor->ProcessMessage(c_message, size);
@@ -65,19 +88,31 @@ int sp_midi_init()
     MonitorLogger::getInstance().setLogLevel(MONITOR_LEVEL);
 
      oscInputProcessor = make_unique<OscInProcessor>();
-    // Prepare the OSC input and MIDI outputs
+    // Prepare the MIDI outputs
     try {
         prepareOscProcessorOutputs(oscInputProcessor);
     } catch (const std::out_of_range&) {
         cout << "Error opening MIDI outputs" << endl;
         return -1;
     }
+
+    // Prepare the MIDI inputs
+    try{
+        prepareMidiProcessors(midiInputProcessors);
+    } catch (const std::out_of_range&) {
+        cout << "Error opening MIDI inputs" << endl;
+        return -1;
+    }
+
+
+
     return 0;
 }
 
 void sp_midi_deinit()
 {
-    oscInputProcessor.reset(nullptr);
+    oscInputProcessor.reset(nullptr);    
+    midiInputProcessors.clear();
 }
 
 static char **vector_str_to_c(const vector<string>& vector_str)
@@ -110,6 +145,7 @@ char **sp_midi_ins(int *n_list)
 }
 
 
+
 // NIF functions
 ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -129,7 +165,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     int ret = enif_inspect_binary(env, argv[0], &bin);
     if (!ret)
     {
-        return enif_make_int(env, 1);
+        return enif_make_badarg(env);
     }
     const char *c_message = (char *)bin.data;
     int size = bin.size;
@@ -138,7 +174,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return enif_make_int(env, 0);
 }
 
-ERL_NIF_TERM c_str_list_to_erlang(ErlNifEnv* env, int n, char **c_str_list)
+ERL_NIF_TERM c_str_list_to_erlang(ErlNifEnv *env, int n, char **c_str_list)
 {
     ERL_NIF_TERM *terms = (ERL_NIF_TERM*)malloc(n * sizeof(ERL_NIF_TERM));
     for (int i = 0; i < n; i++) {
@@ -170,13 +206,34 @@ ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return c_str_list_to_erlang(env, n_midi_ins, midi_ins);
 }
 
+ERL_NIF_TERM sp_midi_have_my_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    if (!enif_self(env, &midi_process_pid)){
+        return enif_make_badarg(env);        
+    }
+    return enif_make_int(env, 0);
+}
+
+
+int send_midi_osc_to_erlang(const char *data, size_t size)
+{
+    ErlNifEnv *msg_env = enif_alloc_env();
+    ERL_NIF_TERM term;
+    unsigned char *term_bin = enif_make_new_binary(msg_env, size, &term);
+    memcpy(term_bin, data, size);
+
+    int rc = enif_send(NULL, &midi_process_pid, msg_env, term);
+    enif_free_env(msg_env);
+    return rc;
+}
 
 static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
     {"midi_send", 1, sp_midi_send_nif},
     {"midi_outs", 0, sp_midi_outs_nif},
-    {"midi_ins", 0, sp_midi_ins_nif}
+    {"midi_ins", 0, sp_midi_ins_nif},
+    {"have_my_pid", 0, sp_midi_have_my_pid}
 };
 
 ERL_NIF_INIT(sp_midi, nif_funcs, NULL, NULL, NULL, NULL);

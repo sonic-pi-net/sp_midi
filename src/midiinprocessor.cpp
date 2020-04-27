@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016 Luis Lloret
+// Copyright (c) 2016-2020 Luis Lloret
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cassert>
+#include "sp_midi.h"
 #include "midiinprocessor.h"
 #include "osc/OscOutboundPacketStream.h"
 #include "utils.h"
@@ -36,10 +37,7 @@ regex MidiInProcessor::regexChannel{ "\\$c" };
 regex MidiInProcessor::regexMessageType{ "\\$m" };
 regex MidiInProcessor::regexDoubleSlash{ "//" };
 
-MidiInProcessor::MidiInProcessor(const std::string& inputName, vector<shared_ptr<OscOutput> > outputs, bool isVirtual)
-    : m_outputs(outputs),
-      m_useOscTemplate(false),
-      m_oscRawMidiMessage(false)
+MidiInProcessor::MidiInProcessor(const std::string& inputName, bool isVirtual) : m_oscRawMidiMessage(false)
 {
     m_input = make_unique<MidiIn>(inputName, this, isVirtual);
 }
@@ -173,18 +171,11 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
     stringstream path;
     string normalizedPortName(m_input->getNormalizedPortName());
     int portId = m_input->getPortId();
-    // Was a template specified?
-    if (m_useOscTemplate) {
-        string templateSubst(m_oscTemplate);
-        doTemplateSubst(templateSubst, normalizedPortName, portId, channel, message_type);
-        path << templateSubst;
-    } else {
-        path << "/midi/" << normalizedPortName << "/" << portId;
-        if (channel != 0xff) {
-            path << "/" << (int)channel;
-        }
-        path << "/" << message_type;
+    path << "/midi/" << normalizedPortName << "/" << portId;
+    if (channel != 0xff) {
+        path << "/" << (int)channel;
     }
+    path << "/" << message_type;
 
     // And now prepare the OSC message body
     char buffer[1024];
@@ -192,7 +183,7 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
     p << osc::BeginMessage(path.str().c_str());
 
     // send the raw midi message as part of the body
-    // do we want a raw midi message?
+    // TODO: do we want a raw midi message?
     if (m_oscRawMidiMessage) {
         if (nBytes > 0) {
             p << osc::Blob(message, static_cast<osc::osc_bundle_element_size_t>(nBytes));
@@ -223,40 +214,10 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
         }
     }
 
-    //start_time = chrono::high_resolution_clock::now();
-
-    // And send the message to the specified output ports
-    for (auto& output : m_outputs) {
-        output->sendUDP(p.Data(), p.Size());
-        local_utils::logOSCMessage(p.Data(), p.Size());
-    }
+    // And send the message to the erlang process
+    send_midi_osc_to_erlang(p.Data(), p.Size());
 }
 
-void MidiInProcessor::setOscTemplate(const std::string& oscTemplate)
-{
-    m_oscTemplate = oscTemplate;
-    m_useOscTemplate = true;
-};
-
-void MidiInProcessor::setOscRawMidiMessage(bool oscRawMidiMessage)
-{
-    m_oscRawMidiMessage = oscRawMidiMessage;
-}
-
-void MidiInProcessor::doTemplateSubst(string& str, const string& portName, int portId, int channel, const string& message_type) const
-{
-    str = regex_replace(regex_replace(regex_replace(regex_replace(str,
-                                                        regexMessageType, message_type),
-                                          regexChannel, (channel != 0xff ? to_string(channel) : "")),
-                            regexId, to_string(portId)),
-        regexName, portName);
-
-    // And now remove potential double slashes when the message does not have a channel, and remove potential slash at the end
-    str = regex_replace(str, regexDoubleSlash, "/");
-    if (str.back() == '/') {
-        str.pop_back();
-    }
-}
 
 void MidiInProcessor::dumpMIDIMessage(const uint8_t* message, int size) const
 {

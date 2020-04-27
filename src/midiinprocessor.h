@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016 Luis Lloret
+// Copyright (c) 2016-2020 Luis Lloret
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,25 +27,20 @@
 
 #include "monitorlogger.h"
 #include "midiin.h"
-#include "oscout.h"
 
 class MidiInProcessor : public MidiInputCallback {
 public:
-    MidiInProcessor(const std::string& inputName, std::vector<std::shared_ptr<OscOutput> > outputs, bool isVirtual = false);
+    MidiInProcessor(const std::string& inputName, bool isVirtual = false);
     void handleIncomingMidiMessage(MidiInput* source, const juce::MidiMessage& midiMessage) override;
-    void setOscTemplate(const std::string& oscTemplate);
-    void setOscRawMidiMessage(bool oscRawMidiMessage);
     int getInputId() const { return m_input->getPortId(); };
     std::string getInputNormalizedPortName() const { return m_input->getNormalizedPortName(); };
     std::string getInputPortname() const { return m_input->getPortName(); };
 
 protected:
-    void doTemplateSubst(std::string& str, const std::string& portName, int portId, int channel, const std::string& message_type) const;
     void dumpMIDIMessage(const uint8_t* message, int size) const;
     std::unique_ptr<MidiIn> m_input;
-    std::vector<std::shared_ptr<OscOutput> > m_outputs;
-    bool m_useOscTemplate;
-    std::string m_oscTemplate;
+
+    // TODO: do we need to send the raw message to Sonic Pi?
     bool m_oscRawMidiMessage;
 
     // To avoid having to construct the regex everytime
