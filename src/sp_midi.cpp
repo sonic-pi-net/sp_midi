@@ -27,8 +27,6 @@
 #include "sp_midi.h"
 #include "midiout.h"
 #include "midiin.h"
-#include "oscin.h"
-#include "oscout.h"
 #include "oscinprocessor.h"
 #include "midiinprocessor.h"
 #include "osc/OscOutboundPacketStream.h"
@@ -132,7 +130,7 @@ char **sp_midi_outs(int *n_list)
 {
     auto outputs = MidiOut::getOutputNames();
     char **c_str_list = vector_str_to_c(outputs);
-    *n_list = outputs.size();
+    *n_list = (int)outputs.size();
     return c_str_list;
 }
 
@@ -140,7 +138,7 @@ char **sp_midi_ins(int *n_list)
 {
     auto inputs = MidiIn::getInputNames();
     char **c_str_list = vector_str_to_c(inputs);
-    *n_list = inputs.size();
+    *n_list = (int)inputs.size();
     return c_str_list;
 }
 
@@ -168,7 +166,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
     const char *c_message = (char *)bin.data;
-    int size = bin.size;
+    int size = (int)bin.size;
 
     sp_midi_send(c_message, size);
     return enif_make_int(env, 0);

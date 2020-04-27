@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <memory>
-#include "oscout.h"
 #include "spdlog/spdlog.h"
 
 class MonitorLogger {
