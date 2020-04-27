@@ -6,4 +6,5 @@ osmid.sublime-project
 osmid.sublime-workspace
 .vscode/
 *.beam
+.vs/
 
