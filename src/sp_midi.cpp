@@ -25,6 +25,7 @@
 #include <iostream>
 #include <atomic>
 #include "sp_midi.h"
+#include "message_thread.h"
 #include "midiout.h"
 #include "midiin.h"
 #include "oscinprocessor.h"
@@ -43,6 +44,9 @@ static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
 // MIDI in
 static vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
+
+OscMessageThread *msg_thread = nullptr;
+
 
 static ErlNifPid midi_process_pid;
 
@@ -76,9 +80,22 @@ void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProces
 }
 
 
+vector<int64> timestamps;
+
+void print_time_stamp()
+{
+    auto now = chrono::high_resolution_clock::now();
+    auto duration = now.time_since_epoch();
+    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+    timestamps.push_back(micros);
+}
+
+
 void sp_midi_send(const char* c_message, unsigned int size)
 {
-    oscInputProcessor->ProcessMessage(c_message, size);
+    print_time_stamp();
+    // This calls the ProcessMessage asynchronously on the message manager, which has its own thread
+    msg_thread->message_manager->callAsync([c_message, size]() {oscInputProcessor->ProcessMessage(c_message, size); });
 }
 
 int sp_midi_init()
@@ -102,13 +119,19 @@ int sp_midi_init()
         return -1;
     }
 
-
+    msg_thread = new OscMessageThread;
+    msg_thread->startThread();
+        
+    while (!msg_thread->isReady());
 
     return 0;
 }
 
 void sp_midi_deinit()
 {
+    msg_thread->stopDispatchLoop();
+    bool rc = msg_thread->stopThread(500);
+    delete msg_thread;
     oscInputProcessor.reset(nullptr);    
     midiInputProcessors.clear();
 }
@@ -167,7 +190,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     const char *c_message = (char *)bin.data;
     int size = (int)bin.size;
-
+        
     sp_midi_send(c_message, size);
     return enif_make_int(env, 0);
 }
