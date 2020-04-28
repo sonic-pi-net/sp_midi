@@ -80,20 +80,35 @@ void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProces
 }
 
 
-vector<int64> timestamps;
+struct timestamp {
+    char type;
+    int id;
+    int64 t;
+};
 
-void print_time_stamp()
+vector<timestamp> timestamps;
+
+void print_time_stamp(char type)
 {
+    static int id_A = 0;
+    static int id_B = 0;
     auto now = chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();
     auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-    timestamps.push_back(micros);
+    timestamp ts{type, (type == 'A' ? id_A++ : id_B++), micros};
+    timestamps.push_back(ts);
 }
 
+void output_time_stamps()
+{
+    for (auto ts : timestamps) {
+        cout << ts.type << "," << ts.id << "," << ts.t << endl;
+    }
+}
 
 void sp_midi_send(const char* c_message, unsigned int size)
 {
-    print_time_stamp();
+    print_time_stamp('A');
     // This calls the ProcessMessage asynchronously on the message manager, which has its own thread
     msg_thread->message_manager->callAsync([c_message, size]() {oscInputProcessor->ProcessMessage(c_message, size); });
 }
@@ -129,6 +144,7 @@ int sp_midi_init()
 
 void sp_midi_deinit()
 {
+    output_time_stamps();
     msg_thread->stopDispatchLoop();
     bool rc = msg_thread->stopThread(500);
     delete msg_thread;

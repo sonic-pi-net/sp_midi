@@ -39,6 +39,17 @@ int main()
     getchar();
     sp_midi_send(osc_string_off, 32);
 
+    for (int i = 0; i < 100; i++) {
+        _sleep(5);
+        sp_midi_send(osc_string_on, 32);
+        _sleep(5);
+//        for (long long j = 0; j < 100000000; j++) {
+//        }
+        sp_midi_send(osc_string_off, 32); 
+    }
+
+    getchar();
+
     sp_midi_deinit();
 
 }

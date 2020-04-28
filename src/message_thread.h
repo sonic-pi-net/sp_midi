@@ -7,7 +7,9 @@
 class OscMessageThread : public Thread
 {
 public:
-    OscMessageThread() : Thread("message thread"), ready(false) {};
+  OscMessageThread() : Thread("message thread"), ready(false) {
+      setPriority(10);
+  };
 
     void run() override
     {
@@ -34,7 +36,7 @@ public:
     // TODO: make private after testing
     MessageManager* message_manager;
 private:
-    bool ready;
+    std::atomic<bool> ready;
 
 };
 

@@ -38,10 +38,11 @@ void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 }
 
 // TODO: during initial testing to measure latency of async calls
-void print_time_stamp();
+void print_time_stamp(char type);
+
 void OscInProcessor::ProcessMessage(const char *c_message, std::size_t size)
 {
-    print_time_stamp();
+    print_time_stamp('B');
     osc::ReceivedPacket packet_fom_c(c_message, size);
     osc::ReceivedMessage message(packet_fom_c);
 
