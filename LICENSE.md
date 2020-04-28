@@ -1,4 +1,4 @@
-osmid uses the JUCE library, with its license:
+sp_midi uses the JUCE library, with its license:
 Copyright (c) 2017 - ROLI Ltd.
 
 The core JUCE modules (juce_audio_basics, juce_audio_devices, juce_blocks_basics,
@@ -15,7 +15,7 @@ For my own work (Luis Lloret):
 
 MIT License
 
-Copyright (c) 2016 Luis Lloret
+Copyright (c) 2016-2020 Luis Lloret
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

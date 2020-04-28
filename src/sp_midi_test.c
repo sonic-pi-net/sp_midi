@@ -41,9 +41,9 @@ int main()
     sp_midi_send(osc_string_off, 32);
 
     for (int i = 0; i < 100; i++) {
-        _sleep(1);
+        Sleep(1);
         sp_midi_send(osc_string_on, 32);
-        _sleep(1);
+        Sleep(1);
         sp_midi_send(osc_string_off, 32); 
     }
 

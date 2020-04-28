@@ -33,9 +33,13 @@ public:
         return ready;
     }
 
-    // TODO: make private after testing
-    MessageManager* message_manager;
+    template <typename FunctionType>
+    void callAsync(FunctionType functionToCall) {
+        message_manager->callAsync(functionToCall);
+    }
+
 private:
+    MessageManager* message_manager;
     std::atomic<bool> ready;
 
 };

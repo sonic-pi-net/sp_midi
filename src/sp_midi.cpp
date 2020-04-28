@@ -35,6 +35,7 @@
 #include "utils.h"
 #include "monitorlogger.h"
 
+// TODO: make sure this is 6 on production builds / or log to somewhere else, not the console
 static const int MONITOR_LEVEL = 6;
 
 using namespace std;
@@ -111,7 +112,9 @@ void sp_midi_send(const char* c_message, unsigned int size)
 {
     print_time_stamp('A');
     // This calls the ProcessMessage asynchronously on the message manager, which has its own thread
-    msg_thread->message_manager->callAsync([c_message, size]() {oscInputProcessor->ProcessMessage(c_message, size); });
+    msg_thread->callAsync([c_message, size]() {
+      oscInputProcessor->ProcessMessage(c_message, size);
+    });
 }
 
 int sp_midi_init()
@@ -145,7 +148,7 @@ int sp_midi_init()
 
 void sp_midi_deinit()
 {
-    output_time_stamps();
+    //output_time_stamps();
     msg_thread->stopDispatchLoop();
     bool rc = msg_thread->stopThread(500);
     delete msg_thread;
@@ -184,6 +187,26 @@ char **sp_midi_ins(int *n_list)
 
 
 
+// NIF helper functions
+ERL_NIF_TERM c_str_list_to_erlang(ErlNifEnv *env, int n, char **c_str_list)
+{
+    ERL_NIF_TERM *terms = (ERL_NIF_TERM*)malloc(n * sizeof(ERL_NIF_TERM));
+    for (int i = 0; i < n; i++) {
+        terms[i] = enif_make_string(env, c_str_list[i], ERL_NIF_LATIN1);
+    }
+
+    ERL_NIF_TERM string_array = enif_make_list_from_array(env, terms, n);
+
+    for (int i = 0; i < n; i++) {
+        free(c_str_list[i]);
+    }
+    free(c_str_list);
+    free(terms);
+
+    return string_array;
+}
+
+
 // NIF functions
 ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -212,23 +235,6 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return enif_make_int(env, 0);
 }
 
-ERL_NIF_TERM c_str_list_to_erlang(ErlNifEnv *env, int n, char **c_str_list)
-{
-    ERL_NIF_TERM *terms = (ERL_NIF_TERM*)malloc(n * sizeof(ERL_NIF_TERM));
-    for (int i = 0; i < n; i++) {
-        terms[i] = enif_make_string(env, c_str_list[i], ERL_NIF_LATIN1);
-    }
-
-    ERL_NIF_TERM string_array = enif_make_list_from_array(env, terms, n);
-
-    for (int i = 0; i < n; i++) {
-        free(c_str_list[i]);
-    }
-    free(c_str_list);
-    free(terms);
-
-    return string_array;
-}
 
 ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -244,7 +250,7 @@ ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return c_str_list_to_erlang(env, n_midi_ins, midi_ins);
 }
 
-ERL_NIF_TERM sp_midi_have_my_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM sp_midi_have_my_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     if (!enif_self(env, &midi_process_pid)){
         return enif_make_badarg(env);        
@@ -252,6 +258,14 @@ ERL_NIF_TERM sp_midi_have_my_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     return enif_make_int(env, 0);
 }
 
+
+ERL_NIF_TERM sp_midi_get_current_time_microseconds(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    auto now = chrono::high_resolution_clock::now();
+    auto duration = now.time_since_epoch();
+    int64 micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+    return enif_make_int64(env, micros);
+}
 
 int send_midi_osc_to_erlang(const char *data, size_t size)
 {
@@ -265,13 +279,15 @@ int send_midi_osc_to_erlang(const char *data, size_t size)
     return rc;
 }
 
+
 static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
     {"midi_send", 1, sp_midi_send_nif},
     {"midi_outs", 0, sp_midi_outs_nif},
     {"midi_ins", 0, sp_midi_ins_nif},
-    {"have_my_pid", 0, sp_midi_have_my_pid}
+    {"have_my_pid", 0, sp_midi_have_my_pid_nif},
+    {"get_current_time_microseconds", 0, sp_midi_get_current_time_microseconds}
 };
 
 ERL_NIF_INIT(sp_midi, nif_funcs, NULL, NULL, NULL, NULL);

@@ -1,5 +1,5 @@
 -module(sp_midi_test).
--export([start/0, midi_process/0]).
+-export([start/0, midi_process/0, test_get_current_time_microseconds/2]).
 
 
 midi_process() ->
@@ -15,9 +15,21 @@ midi_process() ->
     midi_process().
 
 
+test_get_current_time_microseconds(0, _) ->
+    done;
+test_get_current_time_microseconds(Count, SleepMillis) ->
+    T = sp_midi:get_current_time_microseconds(),
+    io:fwrite("Time in microsenconds: ~p~n", [T]),
+    timer:sleep(SleepMillis),
+    test_get_current_time_microseconds(Count-1, SleepMillis).
+
+
 start() ->
 %    cd("d:/projects/sp_midi/src").
     compile:file(sp_midi),
+
+    io:fwrite("Testing NIF function to return current time in microseconds. The values should be around 1000 miliseconds away"),
+    test_get_current_time_microseconds(10, 1000),
 
     Aon = binary:list_to_bin("/*/note_on"),
     Mon = <<Aon/binary, <<0, 0, 44, 105, 105, 105, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 64, 0, 0, 0, 100>>/binary >>,

@@ -140,7 +140,7 @@ void OscInProcessor::send(const string& outDevice, const MidiMessage& msg)
     }
 }
 
-// FIXME: For now send to all outputs. Later send only to the appropriate outputs
+// TODO: do we need to process raw messages?
 void OscInProcessor::processRawMessage(const string& outDevice, const osc::ReceivedMessage& message)
 {
     auto arg = message.ArgumentsBegin();
