@@ -35,7 +35,7 @@
 #include "utils.h"
 #include "monitorlogger.h"
 
-static const int MONITOR_LEVEL = 0;
+static const int MONITOR_LEVEL = 6;
 
 using namespace std;
 
@@ -92,10 +92,11 @@ void print_time_stamp(char type)
 {
     static int id_A = 0;
     static int id_B = 0;
+    static int id_C = 0;
     auto now = chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();
     auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-    timestamp ts{type, (type == 'A' ? id_A++ : id_B++), micros};
+    timestamp ts{type, (type == 'A' ? id_A++ : type == 'B'? id_B++ : id_C++), micros};
     timestamps.push_back(ts);
 }
 
