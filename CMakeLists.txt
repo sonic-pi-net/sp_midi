@@ -51,25 +51,25 @@ else(APPLE)
 endif(APPLE)
 
 # sp_midi_sources
-add_library(sp_midi SHARED ${sp_midi_sources} ${juce_sources})
-target_link_libraries(sp_midi oscpack)
+add_library(libsp_midi SHARED ${sp_midi_sources} ${juce_sources})
+target_link_libraries(libsp_midi oscpack)
 
 add_definitions(-DJUCE_ALSA_MIDI_NAME="sp_midi")
 
 if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0600 -DJUCER_VS2015_78A5022=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
     include_directories("C:/Program Files/erl10.7/usr/include")
-    target_link_libraries(sp_midi winmm)
+    target_link_libraries(libsp_midi winmm)
 elseif(APPLE)
     add_definitions(-DNDEBUG=1 -DJUCER_XCODE_MAC_F6D2F4CF=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
-    set_target_properties(sp_midi PROPERTIES XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME "NO")
+    set_target_properties(libsp_midi PROPERTIES XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME "NO")
     set(CMAKE_EXE_LINKER_FLAGS "-framework CoreMIDI -framework CoreAudio -framework CoreFoundation -framework Accelerate -framework QuartzCore -framework AudioToolbox -framework IOKit -framework DiscRecording -framework Cocoa")
 elseif(UNIX)
     add_definitions(-DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
-    target_link_libraries(sp_midi pthread ${ALSA_LIBRARY} dl rt X11)
+    target_link_libraries(libsp_midi pthread ${ALSA_LIBRARY} dl rt X11)
 endif(MSVC)
 
 # example test exe
 add_executable(sp_midi_test src/sp_midi_test.c)
-target_link_libraries(sp_midi_test sp_midi)
+target_link_libraries(sp_midi_test libsp_midi)
 
