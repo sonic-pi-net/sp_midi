@@ -3,7 +3,12 @@
 -on_load(init/0).
 
 init() ->
-    ok = erlang:load_nif("D:/projects/sp_midi/build/Debug/sp_midi", 0).
+    case os:type() of
+    {win32, _} ->
+        ok = erlang:load_nif("D:/projects/sp_midi/build/Debug/libsp_midi", 0);
+    _Else ->
+        ok = erlang:load_nif("/home/luis/projects/sp_midi/build/libsp_midi", 0)
+    end.
 
 midi_init() ->
     exit(nif_library_not_loaded).

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "sp_midi.h"
 
 int main()

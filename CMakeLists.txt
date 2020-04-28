@@ -17,10 +17,12 @@ elseif(UNIX)
     find_package(ALSA REQUIRED)
 endif(APPLE)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(oscpack_path ${PROJECT_SOURCE_DIR}/external_libs/oscpack_1_1_0)
 add_subdirectory(${oscpack_path})
 include_directories(${oscpack_path} ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules  ${PROJECT_SOURCE_DIR}/external_libs/cxxopts)
+
 
 set(sp_midi_sources
     src/sp_midi.cpp
@@ -52,6 +54,7 @@ endif(APPLE)
 
 # sp_midi_sources
 add_library(libsp_midi SHARED ${sp_midi_sources} ${juce_sources})
+SET_TARGET_PROPERTIES(libsp_midi PROPERTIES PREFIX "")
 target_link_libraries(libsp_midi oscpack)
 
 add_definitions(-DJUCE_ALSA_MIDI_NAME="sp_midi")
@@ -60,6 +63,9 @@ if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0600 -DJUCER_VS2015_78A5022=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
     include_directories("C:/Program Files/erl10.7/usr/include")
     target_link_libraries(libsp_midi winmm)
+    # example test exe. Only under Windows, because on the others, the NIF functions are resolved when linked to the erlnag VM, not on the library
+    add_executable(sp_midi_test src/sp_midi_test.c)
+    target_link_libraries(sp_midi_test libsp_midi)
 elseif(APPLE)
     add_definitions(-DNDEBUG=1 -DJUCER_XCODE_MAC_F6D2F4CF=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
     set_target_properties(libsp_midi PROPERTIES XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME "NO")
@@ -68,8 +74,4 @@ elseif(UNIX)
     add_definitions(-DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)
     target_link_libraries(libsp_midi pthread ${ALSA_LIBRARY} dl rt X11)
 endif(MSVC)
-
-# example test exe
-add_executable(sp_midi_test src/sp_midi_test.c)
-target_link_libraries(sp_midi_test libsp_midi)
 
