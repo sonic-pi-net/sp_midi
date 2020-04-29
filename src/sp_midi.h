@@ -53,7 +53,7 @@ extern "C" {
 
 
     /************** Functions for the erlang integration below ***************/
-    // TODO: what return values make sense from the functions in case of error, success, etc?
+    
     /**
      * Send the MIDI in event to the erlang process as an OSC message. Will use enif_send() to send
      * the data to the erlang process

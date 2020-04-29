@@ -35,8 +35,7 @@
 #include "utils.h"
 #include "monitorlogger.h"
 
-// TODO: make sure this is 6 on production builds / or log to somewhere else, not the console
-static const int MONITOR_LEVEL = 6;
+static int g_monitor_level = 6;
 
 using namespace std;
 
@@ -52,6 +51,8 @@ OscMessageThread *msg_thread = nullptr;
 static ErlNifPid midi_process_pid;
 
 static mutex g_oscinMutex;
+
+static atomic<bool> g_already_initialized = false;
 
 static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProcessor)
 {
@@ -119,9 +120,13 @@ void sp_midi_send(const char* c_message, unsigned int size)
 
 int sp_midi_init()
 {
-    MonitorLogger::getInstance().setLogLevel(MONITOR_LEVEL);
+    if (g_already_initialized){
+        return 0;
+    }
+    g_already_initialized = true;
+    MonitorLogger::getInstance().setLogLevel(g_monitor_level);
 
-     oscInputProcessor = make_unique<OscInProcessor>();
+    oscInputProcessor = make_unique<OscInProcessor>();
     // Prepare the MIDI outputs
     try {
         prepareOscProcessorOutputs(oscInputProcessor);
@@ -148,6 +153,10 @@ int sp_midi_init()
 
 void sp_midi_deinit()
 {
+    if (!g_already_initialized){
+        return;
+    }
+    g_already_initialized = false;
     //output_time_stamps();
     msg_thread->stopDispatchLoop();
     bool rc = msg_thread->stopThread(500);
@@ -211,13 +220,13 @@ ERL_NIF_TERM c_str_list_to_erlang(ErlNifEnv *env, int n, char **c_str_list)
 ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int ret = sp_midi_init();
-    return enif_make_int(env, ret);
+    return enif_make_atom(env, "ok");
 }
 
 ERL_NIF_TERM sp_midi_deinit_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     sp_midi_deinit();
-    return enif_make_int(env, 0);
+    return enif_make_atom(env, "ok");
 }
 
 ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -232,7 +241,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     int size = (int)bin.size;
         
     sp_midi_send(c_message, size);
-    return enif_make_int(env, 0);
+    return enif_make_atom(env, "ok");
 }
 
 
@@ -255,7 +264,26 @@ ERL_NIF_TERM sp_midi_have_my_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TER
     if (!enif_self(env, &midi_process_pid)){
         return enif_make_badarg(env);        
     }
-    return enif_make_int(env, 0);
+    return enif_make_atom(env, "ok");
+}
+
+
+ERL_NIF_TERM sp_midi_set_this_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    if (!enif_is_pid(env, argv[0])){
+        return enif_make_badarg(env);
+    }
+
+    int rc = enif_get_local_pid(env, argv[0], &midi_process_pid);
+    return enif_make_atom(env, (rc ? "ok" : "error"));
+}
+
+
+ERL_NIF_TERM sp_midi_set_log_level(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int rc = enif_get_int(env, argv[0], &g_monitor_level);
+    MonitorLogger::getInstance().setLogLevel(g_monitor_level);
+    return enif_make_atom(env, (rc ? "ok" : "error"));
 }
 
 
@@ -287,6 +315,8 @@ static ErlNifFunc nif_funcs[] = {
     {"midi_outs", 0, sp_midi_outs_nif},
     {"midi_ins", 0, sp_midi_ins_nif},
     {"have_my_pid", 0, sp_midi_have_my_pid_nif},
+    {"set_this_pid", 1, sp_midi_set_this_pid_nif},
+    {"set_log_level", 1, sp_midi_set_log_level},
     {"get_current_time_microseconds", 0, sp_midi_get_current_time_microseconds}
 };
 
