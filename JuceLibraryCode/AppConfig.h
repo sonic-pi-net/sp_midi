@@ -50,11 +50,8 @@
 //==============================================================================
 #define JUCE_MODULE_AVAILABLE_juce_audio_basics         1
 #define JUCE_MODULE_AVAILABLE_juce_audio_devices        1
-#define JUCE_MODULE_AVAILABLE_juce_audio_formats        1
 #define JUCE_MODULE_AVAILABLE_juce_core                 1
-#define JUCE_MODULE_AVAILABLE_juce_data_structures      1
 #define JUCE_MODULE_AVAILABLE_juce_events               1
-#define JUCE_MODULE_AVAILABLE_juce_osc                  1
 
 #define JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED 1
 
@@ -163,6 +160,6 @@
  #if defined(JucePlugin_Name) && defined(JucePlugin_Build_Standalone)
   #define  JUCE_STANDALONE_APPLICATION JucePlugin_Build_Standalone
  #else
-  #define  JUCE_STANDALONE_APPLICATION 1
+  #define  JUCE_STANDALONE_APPLICATION 0
  #endif
 #endif
