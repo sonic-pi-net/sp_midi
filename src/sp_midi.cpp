@@ -52,7 +52,7 @@ static ErlNifPid midi_process_pid;
 
 static mutex g_oscinMutex;
 
-static atomic<bool> g_already_initialized = false;
+static atomic<bool> g_already_initialized(false);
 
 static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProcessor)
 {
