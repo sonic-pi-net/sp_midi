@@ -165,15 +165,18 @@ void sp_midi_deinit()
     }
     g_already_initialized = false;
     //output_time_stamps();
+    
+    midiInputProcessors.clear();
+    oscInputProcessor.reset(nullptr);    
 
     hotplug_thread->stopThread(2000);
     delete hotplug_thread;
 
     msg_thread->stopDispatchLoop();
     bool rc = msg_thread->stopThread(500);
-    delete msg_thread;    
-    oscInputProcessor.reset(nullptr);    
-    midiInputProcessors.clear();
+    delete msg_thread;
+
+    DeletedAtShutdown::deleteAll();
 }
 
 static char **vector_str_to_c(const vector<string>& vector_str)
