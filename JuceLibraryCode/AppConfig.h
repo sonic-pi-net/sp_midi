@@ -128,7 +128,7 @@
 #endif
 
 #ifndef    JUCE_USE_CURL
- //#define JUCE_USE_CURL 0
+ #define JUCE_USE_CURL 0
 #endif
 
 #ifndef    JUCE_CATCH_UNHANDLED_EXCEPTIONS
