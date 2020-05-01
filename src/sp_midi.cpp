@@ -26,6 +26,7 @@
 #include <atomic>
 #include "sp_midi.h"
 #include "message_thread.h"
+#include "hotplug_thread.h"
 #include "midiout.h"
 #include "midiin.h"
 #include "oscinprocessor.h"
@@ -43,9 +44,11 @@ using namespace std;
 static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
 // MIDI in
-static vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
+vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
 
-OscMessageThread *msg_thread = nullptr;
+OscMessageManagerThread *msg_thread = nullptr;
+
+HotPlugThread *hotplug_thread = nullptr;
 
 
 static ErlNifPid midi_process_pid;
@@ -70,6 +73,7 @@ void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProces
     // Should we open all devices, or just the ones passed as parameters?
     vector<string> midiInputsToOpen = MidiIn::getInputNames();
 
+    midiInputProcessors.clear();
     for (const auto& input : midiInputsToOpen) {
         try {
             auto midiInputProcessor = make_unique<MidiInProcessor>(input, false);
@@ -143,8 +147,11 @@ int sp_midi_init()
         return -1;
     }
 
-    msg_thread = new OscMessageThread;
+    msg_thread = new OscMessageManagerThread;
     msg_thread->startThread();
+
+    hotplug_thread = new HotPlugThread;
+    hotplug_thread->startThread();
         
     while (!msg_thread->isReady());
 
@@ -158,9 +165,13 @@ void sp_midi_deinit()
     }
     g_already_initialized = false;
     //output_time_stamps();
+
+    hotplug_thread->stopThread(2000);
+    delete hotplug_thread;
+
     msg_thread->stopDispatchLoop();
     bool rc = msg_thread->stopThread(500);
-    delete msg_thread;
+    delete msg_thread;    
     oscInputProcessor.reset(nullptr);    
     midiInputProcessors.clear();
 }

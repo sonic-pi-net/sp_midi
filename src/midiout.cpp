@@ -48,7 +48,6 @@ MidiOut::MidiOut(const string& portName)
 MidiOut::~MidiOut()
 {
     m_logger.trace("MidiOut destructor for {}", m_portName);
-    delete m_midiOut;
 }
 
 void MidiOut::send(const juce::MidiMessage& message)

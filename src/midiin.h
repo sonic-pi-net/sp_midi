@@ -40,5 +40,5 @@ public:
 
 protected:
     void updateMidiDevicesNamesMapping() override;
-    MidiInput* m_midiIn;
+    std::unique_ptr<MidiInput> m_midiIn;
 };

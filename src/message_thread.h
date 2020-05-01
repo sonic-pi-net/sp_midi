@@ -1,13 +1,11 @@
 #pragma once
 
-#include <iostream>
-
 #include "../JuceLibraryCode/JuceHeader.h"
 
-class OscMessageThread : public Thread
+class OscMessageManagerThread : public Thread
 {
 public:
-  OscMessageThread() : Thread("message thread"), ready(false) {
+  OscMessageManagerThread() : Thread("message thread"), ready(false) {
       setPriority(10);
   };
 
@@ -19,7 +17,7 @@ public:
         message_manager->runDispatchLoop();
     }
 
-    ~OscMessageThread()
+    ~OscMessageManagerThread()
     {
         MessageManager::deleteInstance();
     }

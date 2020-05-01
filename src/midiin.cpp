@@ -61,7 +61,6 @@ MidiIn::~MidiIn()
 {
     m_logger.trace("MidiIn destructor for {}", m_portName);
     m_midiIn->stop();
-    delete m_midiIn;
 }
 
 vector<string> MidiIn::getInputNames()
