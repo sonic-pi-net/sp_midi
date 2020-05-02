@@ -50,6 +50,9 @@ public:
                     send_integer_to_erlang_process(pid, first_pending_message->get_integer());
                     // ... and remove it from the pending messages
                     m_pending_messages.erase(first_pending_message);
+
+                    // ...and check if there is something that we need to fire now or soon (we do not call the wait)
+                    continue;
                 }
             }
             

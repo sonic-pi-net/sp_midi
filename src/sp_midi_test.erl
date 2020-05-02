@@ -56,9 +56,10 @@ start() ->
     io:fwrite("Time now is                 : ~p~n", [T]),
     io:fwrite("Want to fire the callback at: ~p~n", [Tcallback]),
     sp_midi:schedule_callback(Tcallback, PidTestSchedulerCallback, 42),
-    sp_midi:schedule_callback(Tcallback + 10000, PidTestSchedulerCallback, 43), 
-    sp_midi:schedule_callback(Tcallback + 20000, PidTestSchedulerCallback, 44), 
-    sp_midi:schedule_callback(Tcallback - 10000, PidTestSchedulerCallback, 45), 
+    sp_midi:schedule_callback(Tcallback + 10000, PidTestSchedulerCallback, 43),
+    sp_midi:schedule_callback(Tcallback + 10001, PidTestSchedulerCallback, 44), 
+    sp_midi:schedule_callback(Tcallback + 11000, PidTestSchedulerCallback, 45), 
+    sp_midi:schedule_callback(Tcallback - 10000, PidTestSchedulerCallback, 41), 
 
     Pid = spawn(sp_midi_test, midi_process, []),
     sp_midi:set_this_pid(Pid),
