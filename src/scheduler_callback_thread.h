@@ -22,7 +22,13 @@ public:
         int64 next_timer_shot = 0;
         while (!threadShouldExit()){
             // If there are no pending messages, do nothing
-            if (m_pending_messages.empty()) {
+            bool is_empty;
+            {
+                std::lock_guard<std::mutex> guard(m_messages_mutex);
+                is_empty = m_pending_messages.empty();
+            }
+
+            if (is_empty) {
                 wait(10);
                 continue;
             }
@@ -33,16 +39,18 @@ public:
 
             // How far is it in the future?
             int64 current_time = sp_midi_get_current_time_microseconds();
-            int64 time_to_next_message_millis =
-                (next_timer_shot - current_time) / 1000;
+            int64 time_to_next_message_millis = (next_timer_shot - current_time) / 1000;
 
             // If it is less than 1ms away or in the past, fire it
             if (time_to_next_message_millis < 1) {
                 time_to_next_message_millis = LONG_MAX;
-                ErlNifPid pid = first_pending_message->get_pid();
-                send_integer_to_erlang_process(pid, first_pending_message->get_integer());
-                // ... and remove it from the pending messages
-                m_pending_messages.erase(first_pending_message);
+                {
+                  std::lock_guard<std::mutex> guard(m_messages_mutex);
+                    ErlNifPid pid = first_pending_message->get_pid();
+                    send_integer_to_erlang_process(pid, first_pending_message->get_integer());
+                    // ... and remove it from the pending messages
+                    m_pending_messages.erase(first_pending_message);
+                }
             }
             
             // Wait for 10 ms if there is nothing happening soon, or as necessary if there is something less than 10ms away
@@ -52,7 +60,8 @@ public:
 
     void trigger_callback_at(int64 when, ErlNifPid pid, int64 integer)
     {   
-        TupleTimePidIntegerWrapper element(when, pid, integer);        
+        TupleTimePidIntegerWrapper element(when, pid, integer);
+        std::lock_guard<std::mutex> guard(m_messages_mutex);  
         m_pending_messages.insert(element);
     }
 
@@ -75,6 +84,7 @@ private:
     };
 
     std::set<TupleTimePidIntegerWrapper> m_pending_messages;
+    std::mutex m_messages_mutex;
 
     int send_integer_to_erlang_process(ErlNifPid pid, int64 integer)
     {
