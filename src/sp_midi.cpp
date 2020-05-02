@@ -27,6 +27,7 @@
 #include "sp_midi.h"
 #include "message_thread.h"
 #include "hotplug_thread.h"
+#include "scheduler_callback_thread.h"
 #include "midiout.h"
 #include "midiin.h"
 #include "oscinprocessor.h"
@@ -49,6 +50,8 @@ vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
 OscMessageManagerThread *msg_thread = nullptr;
 
 HotPlugThread *hotplug_thread = nullptr;
+
+SchedulerCallbackThread *scheduler_callback_thread = nullptr;
 
 
 static ErlNifPid midi_process_pid;
@@ -147,6 +150,9 @@ int sp_midi_init()
         return -1;
     }
 
+    scheduler_callback_thread = new SchedulerCallbackThread;
+    scheduler_callback_thread->startThread();
+
     msg_thread = new OscMessageManagerThread;
     msg_thread->startThread();
 
@@ -208,6 +214,13 @@ char **sp_midi_ins(int *n_list)
     return c_str_list;
 }
 
+int64 sp_midi_get_current_time_microseconds()
+{
+    auto now = chrono::high_resolution_clock::now();
+    auto duration = now.time_since_epoch();
+    int64 micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+    return micros;
+}
 
 
 // NIF helper functions
@@ -293,7 +306,7 @@ ERL_NIF_TERM sp_midi_set_this_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TE
 }
 
 
-ERL_NIF_TERM sp_midi_set_log_level(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM sp_midi_set_log_level_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int rc = enif_get_int(env, argv[0], &g_monitor_level);
     MonitorLogger::getInstance().setLogLevel(g_monitor_level);
@@ -301,12 +314,9 @@ ERL_NIF_TERM sp_midi_set_log_level(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 }
 
 
-ERL_NIF_TERM sp_midi_get_current_time_microseconds(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM sp_midi_get_current_time_microseconds_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    auto now = chrono::high_resolution_clock::now();
-    auto duration = now.time_since_epoch();
-    int64 micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-    return enif_make_int64(env, micros);
+    return enif_make_int64(env, sp_midi_get_current_time_microseconds());
 }
 
 int send_midi_osc_to_erlang(const char *data, size_t size)
@@ -322,6 +332,30 @@ int send_midi_osc_to_erlang(const char *data, size_t size)
 }
 
 
+ERL_NIF_TERM sp_midi_schedule_callback_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int64 time_to_trigger;
+    ErlNifPid pid;
+    int64 integer;
+
+    if (!enif_get_int64(env, argv[0], &time_to_trigger)){
+        return enif_make_badarg(env);
+    }
+    if (!enif_is_pid(env, argv[1])){
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_local_pid(env, argv[1], &pid)){
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_int64(env, argv[2], &integer)){
+        return enif_make_badarg(env);
+    }
+
+    scheduler_callback_thread->trigger_callback_at(time_to_trigger, pid, integer);
+    return enif_make_atom(env, "ok");
+}
+
+
 static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
@@ -330,8 +364,9 @@ static ErlNifFunc nif_funcs[] = {
     {"midi_ins", 0, sp_midi_ins_nif},
     {"have_my_pid", 0, sp_midi_have_my_pid_nif},
     {"set_this_pid", 1, sp_midi_set_this_pid_nif},
-    {"set_log_level", 1, sp_midi_set_log_level},
-    {"get_current_time_microseconds", 0, sp_midi_get_current_time_microseconds}
+    {"set_log_level", 1, sp_midi_set_log_level_nif},
+    {"schedule_callback", 3, sp_midi_schedule_callback_nif},
+    {"get_current_time_microseconds", 0, sp_midi_get_current_time_microseconds_nif}
 };
 
 ERL_NIF_INIT(sp_midi, nif_funcs, NULL, NULL, NULL, NULL);

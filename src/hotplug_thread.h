@@ -12,7 +12,7 @@ extern std::vector<std::unique_ptr<MidiInProcessor> > midiInputProcessors;
 class HotPlugThread : public Thread
 {
 public:
-  HotPlugThread() : Thread("hotplug thread") { };
+    HotPlugThread() : Thread("hotplug thread") { };
 
     void run() override
     {

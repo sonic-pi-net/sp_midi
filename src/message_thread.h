@@ -5,9 +5,9 @@
 class OscMessageManagerThread : public Thread
 {
 public:
-  OscMessageManagerThread() : Thread("message thread"), ready(false) {
-      setPriority(10);
-  };
+    OscMessageManagerThread() : Thread("message thread"), ready(false) {
+        setPriority(10);
+    };
 
     void run() override
     {
