@@ -41,6 +41,8 @@ static int g_monitor_level = 6;
 
 using namespace std;
 
+// FIXME: need to test what happens when MIDI devices are already in use by another application
+// and sp_midi cannot open them
 // MIDI out
 static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
