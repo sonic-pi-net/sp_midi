@@ -94,7 +94,7 @@ void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProces
 struct timestamp {
     char type;
     int id;
-    int64 t;
+    long long t;
 };
 
 vector<timestamp> timestamps;
@@ -216,11 +216,11 @@ char **sp_midi_ins(int *n_list)
     return c_str_list;
 }
 
-int64 sp_midi_get_current_time_microseconds()
+long long sp_midi_get_current_time_microseconds()
 {
     auto now = chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();
-    int64 micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+    long long micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
     return micros;
 }
 
@@ -336,9 +336,9 @@ int send_midi_osc_to_erlang(const char *data, size_t size)
 
 ERL_NIF_TERM sp_midi_schedule_callback_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    int64 time_to_trigger;
+    long long time_to_trigger;
     ErlNifPid pid;
-    int64 integer;
+    long long integer;
 
     if (!enif_get_int64(env, argv[0], &time_to_trigger)){
         return enif_make_badarg(env);
