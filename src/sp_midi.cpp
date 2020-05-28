@@ -336,9 +336,9 @@ int send_midi_osc_to_erlang(const char *data, size_t size)
 
 ERL_NIF_TERM sp_midi_schedule_callback_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    long long time_to_trigger;
+    long time_to_trigger;
     ErlNifPid pid;
-    long long integer;
+    long integer;
 
     if (!enif_get_int64(env, argv[0], &time_to_trigger)){
         return enif_make_badarg(env);
