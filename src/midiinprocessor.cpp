@@ -31,12 +31,6 @@
 
 using namespace std;
 
-regex MidiInProcessor::regexName{ "\\$n" };
-regex MidiInProcessor::regexId{ "\\$i" };
-regex MidiInProcessor::regexChannel{ "\\$c" };
-regex MidiInProcessor::regexMessageType{ "\\$m" };
-regex MidiInProcessor::regexDoubleSlash{ "//" };
-
 MidiInProcessor::MidiInProcessor(const std::string& inputName, bool isVirtual) : m_oscRawMidiMessage(false)
 {
     m_input = make_unique<MidiIn>(inputName, this, isVirtual);
@@ -171,7 +165,7 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
     stringstream path;
     string normalizedPortName(m_input->getNormalizedPortName());
     int portId = m_input->getPortId();
-    path << "/midi/" << normalizedPortName << "/" << portId;
+    path << "/midi:" << normalizedPortName << ":" << portId << ":" << static_cast<int>(channel) << "/" << message_type;
     if (channel != 0xff) {
         path << "/" << (int)channel;
     }
