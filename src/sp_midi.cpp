@@ -58,8 +58,6 @@ SchedulerCallbackThread *scheduler_callback_thread = nullptr;
 
 static ErlNifPid midi_process_pid;
 
-static mutex g_oscinMutex;
-
 static atomic<bool> g_already_initialized(false);
 
 static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProcessor)
@@ -67,7 +65,6 @@ static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProce
     // Open all MIDI devices. This is what Sonic Pi does
     vector<string> midiOutputsToOpen = MidiOut::getOutputNames();
     {
-        lock_guard<mutex> lock(g_oscinMutex);
         oscInputProcessor->prepareOutputs(midiOutputsToOpen);
     }
 }
@@ -120,10 +117,13 @@ void output_time_stamps()
 
 void sp_midi_send(const char* c_message, unsigned int size)
 {
-    print_time_stamp('A');
+    //print_time_stamp('A');
     // This calls the ProcessMessage asynchronously on the message manager, which has its own thread
-    msg_thread->callAsync([c_message, size]() {
-      oscInputProcessor->ProcessMessage(c_message, size);
+    // Copy the pointer to our own char[] to avoid losing it when it's get called asynchronously
+    char message[1024];
+    memcpy(message, c_message, static_cast<size_t>(size)+1);
+    bool rc = msg_thread->callAsync([message, size]() {
+      oscInputProcessor->ProcessMessage(message, size);
     });
 }
 
@@ -160,7 +160,7 @@ int sp_midi_init()
 
     hotplug_thread = new HotPlugThread;
     hotplug_thread->startThread();
-        
+
     while (!msg_thread->isReady());
 
     return 0;
@@ -173,9 +173,9 @@ void sp_midi_deinit()
     }
     g_already_initialized = false;
     //output_time_stamps();
-    
+
     midiInputProcessors.clear();
-    oscInputProcessor.reset(nullptr);    
+    oscInputProcessor.reset(nullptr);
 
     hotplug_thread->stopThread(2000);
     delete hotplug_thread;
@@ -259,7 +259,7 @@ ERL_NIF_TERM sp_midi_deinit_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 }
 
 ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{    
+{
     ErlNifBinary bin;
     int ret = enif_inspect_binary(env, argv[0], &bin);
     if (!ret)
@@ -268,7 +268,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
     const char *c_message = (char *)bin.data;
     int size = (int)bin.size;
-        
+
     sp_midi_send(c_message, size);
     return enif_make_atom(env, "ok");
 }
@@ -276,7 +276,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    int n_midi_outs;    
+    int n_midi_outs;
     char **midi_outs = sp_midi_outs(&n_midi_outs);
     return c_str_list_to_erlang(env, n_midi_outs, midi_outs);
 }
@@ -291,7 +291,7 @@ ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 ERL_NIF_TERM sp_midi_have_my_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     if (!enif_self(env, &midi_process_pid)){
-        return enif_make_badarg(env);        
+        return enif_make_badarg(env);
     }
     return enif_make_atom(env, "ok");
 }

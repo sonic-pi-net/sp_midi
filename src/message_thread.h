@@ -32,8 +32,8 @@ public:
     }
 
     template <typename FunctionType>
-    void callAsync(FunctionType functionToCall) {
-        message_manager->callAsync(functionToCall);
+    bool callAsync(FunctionType functionToCall) {
+        return message_manager->callAsync(functionToCall);
     }
 
 private:

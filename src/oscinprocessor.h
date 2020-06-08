@@ -24,6 +24,7 @@
 #include <memory.h>
 #include <vector>
 #include <string>
+#include <mutex>
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "osc/OscReceivedElements.h"
 #include "midiout.h"
@@ -69,4 +70,6 @@ private:
 
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
+
+    std::mutex m_mutex;
 };

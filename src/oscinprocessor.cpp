@@ -30,6 +30,7 @@ using namespace juce;
 
 void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 {
+    lock_guard<mutex> lock(m_mutex);
     m_outputs.clear();
     for (auto& outputName : outputNames) {
         auto midiOut = make_unique<MidiOut>(outputName);
@@ -42,60 +43,81 @@ void print_time_stamp(char type);
 
 void OscInProcessor::ProcessMessage(const char *c_message, std::size_t size)
 {
-    print_time_stamp('B');
-    osc::ReceivedPacket packet_fom_c(c_message, size);
-    osc::ReceivedMessage message(packet_fom_c);
+    lock_guard<mutex> lock(m_mutex);
+    try{
+        //print_time_stamp('B');
+        osc::ReceivedPacket packet_fom_c(c_message, size);
+        osc::ReceivedMessage message(packet_fom_c);
 
-    string addressPattern(message.AddressPattern());
-    m_logger.info("Received OSC message with address pattern: {}", addressPattern);
-    dumpOscBody(message);
+        string addressPattern(message.AddressPattern());
+        m_logger.info("Received OSC message with address pattern: {}", addressPattern);
+        dumpOscBody(message);
 
-    regex addressRegex("/(.+?)/(.+)");
-    smatch match;
-    if (regex_match(addressPattern, match, addressRegex)) {
-        // We are interested in groups [1] and [2]. [1] -> device, [2] -> command / raw
-        string rawOutDeviceName = match[1];
-        // don't normalize name if we are given the wildcard name of *
-        if (rawOutDeviceName != "*") {
-            local_utils::safeOscString(rawOutDeviceName);
+        regex addressRegex("/(.+?)/(.+)");
+        smatch match;
+        if (regex_match(addressPattern, match, addressRegex)) {
+            // We are interested in groups [1] and [2]. [1] -> device, [2] -> command / raw
+            string rawOutDeviceName = match[1];
+            // don't normalize name if we are given the wildcard name of *
+            if (rawOutDeviceName != "*") {
+                local_utils::safeOscString(rawOutDeviceName);
+            }
+
+            const string& command = match[2];
+            const string& outDevice = rawOutDeviceName;
+
+            if (command == "clock") {
+                processClockMessage(outDevice);
+            }
+            else if (command == "raw") {
+                processRawMessage(outDevice, message);
+            }
+            else if (command == "note_on") {
+                processNoteOnMessage(outDevice, message);
+            }
+            else if (command == "note_off") {
+                processNoteOffMessage(outDevice, message);
+            }
+            else if (command == "control_change") {
+                processControlChangeMessage(outDevice, message);
+            }
+            else if (command == "pitch_bend") {
+                processPitchBendMessage(outDevice, message);
+            }
+            else if (command == "channel_pressure") {
+                processChannelPressureMessage(outDevice, message);
+            }
+            else if (command == "poly_pressure") {
+                processPolyPressureMessage(outDevice, message);
+            }
+            else if (command == "start") {
+                processStartMessage(outDevice);
+            }
+            else if (command == "continue") {
+                processContinueMessage(outDevice);
+            }
+            else if (command == "stop") {
+                processStopMessage(outDevice);
+            }
+            else if (command == "active_sensing") {
+                processActiveSenseMessage(outDevice);
+            }
+            else if (command == "program_change") {
+                processProgramChangeMessage(outDevice, message);
+            }
+            else if (command == "log_level") {
+                processLogLevelMessage(message);
+            }
+            else {
+                m_logger.error("Unknown command on OSC message: {}. Ignoring", command);
+            }
         }
-
-        const string& command = match[2];
-        const string& outDevice = rawOutDeviceName;
-
-        if (command == "clock") {
-            processClockMessage(outDevice);
-        } else if (command == "raw") {
-            processRawMessage(outDevice, message);
-        } else if (command == "note_on") {
-            processNoteOnMessage(outDevice, message);
-        } else if (command == "note_off") {
-            processNoteOffMessage(outDevice, message);
-        } else if (command == "control_change") {
-            processControlChangeMessage(outDevice, message);
-        } else if (command == "pitch_bend") {
-            processPitchBendMessage(outDevice, message);
-        } else if (command == "channel_pressure") {
-            processChannelPressureMessage(outDevice, message);
-        } else if (command == "poly_pressure") {
-            processPolyPressureMessage(outDevice, message);
-        } else if (command == "start") {
-            processStartMessage(outDevice);
-        } else if (command == "continue") {
-            processContinueMessage(outDevice);
-        } else if (command == "stop") {
-            processStopMessage(outDevice);
-        } else if (command == "active_sensing") {
-            processActiveSenseMessage(outDevice);
-        } else if (command == "program_change") {
-            processProgramChangeMessage(outDevice, message);
-        } else if (command == "log_level") {
-            processLogLevelMessage(message);
-        } else {
-            m_logger.error("Unknown command on OSC message: {}. Ignoring", command);
+        else {
+            m_logger.error("No match on address pattern: {}", addressPattern);
         }
-    } else {
-        m_logger.error("No match on address pattern: {}", addressPattern);
+    }
+    catch (const std::exception& e){
+        m_logger.error("Exception thrown in OscInProcessor::ProcessMessage: {}!!!", e.what());
     }
 }
 
