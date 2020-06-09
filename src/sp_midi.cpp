@@ -350,11 +350,15 @@ ERL_NIF_TERM sp_midi_get_current_time_microseconds_nif(ErlNifEnv* env, int argc,
 int send_midi_osc_to_erlang(const char *data, size_t size)
 {
     ErlNifEnv *msg_env = enif_alloc_env();
-    ERL_NIF_TERM term;
-    unsigned char *term_bin = enif_make_new_binary(msg_env, size, &term);
+    ERL_NIF_TERM term1;
+    ERL_NIF_TERM term2;
+    ERL_NIF_TERM term3;
+    term1 = enif_make_atom(msg_env, "midi_in");
+    unsigned char *term_bin = enif_make_new_binary(msg_env, size, &term2);
     memcpy(term_bin, data, size);
 
-    int rc = enif_send(NULL, &midi_process_pid, msg_env, term);
+    term3 = enif_make_tuple2(msg_env, term1, term2);
+    int rc = enif_send(NULL, &midi_process_pid, msg_env, term3);
     enif_free_env(msg_env);
     return rc;
 }
