@@ -12,7 +12,7 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 if(APPLE)
-    set(ERLANG_INCLUDE_PATH "/usr/local/Cellar/erlang/23.0.2/lib/erlang/usr/include" CACHE PATH "Path to erlang includes")
+    set(ERLANG_INCLUDE_PATH "/usr/local/lib/erlang/usr/include" CACHE PATH "Path to erlang includes")
 elseif(UNIX)
     find_package(ALSA REQUIRED)
 elseif(MSVC)
