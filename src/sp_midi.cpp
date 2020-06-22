@@ -290,7 +290,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     if (rc != 0){
         return enif_make_atom(env, "warning");
     }
-    return enif_make_atom(env, "warning");
+    return enif_make_atom(env, "ok");
 }
 
 ERL_NIF_TERM sp_midi_flush_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
