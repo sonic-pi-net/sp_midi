@@ -30,7 +30,6 @@ using namespace juce;
 
 void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 {
-    lock_guard<mutex> lock(m_mutex);
     m_outputs.clear();
     for (auto& outputName : outputNames) {
         auto midiOut = make_unique<MidiOut>(outputName);
@@ -41,22 +40,42 @@ void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 // TODO: during initial testing to measure latency of async calls
 void print_time_stamp(char type);
 
-extern std::atomic<long> g_flush_count;
-extern std::atomic<long> g_midi_send_in_transit;
-void OscInProcessor::ProcessMessage(long flush_count, const char *c_message, std::size_t size)
+bool OscInProcessor::addMessage(const char* c_message, std::size_t size)
 {
-    lock_guard<mutex> lock(m_mutex);
+    lock_guard<mutex> lock(m_messages_mutex);
+    m_messages.emplace_back(c_message, size);
+    m_data_in_midi_queue.signal();
+    return true;
+}
 
-    // We are processing this message, so reduce number in transit
-    g_midi_send_in_transit--;
-    // Ignore if this message is old
-    if (flush_count != g_flush_count.load()){
-        return;
+
+void OscInProcessor::flushMessages()
+{
+    lock_guard<mutex> lock(m_messages_mutex);
+    m_messages.clear();
+}
+
+
+void OscInProcessor::run()
+{
+    while (!threadShouldExit()){
+        if (m_data_in_midi_queue.wait(500) == true){
+            lock_guard<mutex> lock(m_messages_mutex);
+            while (!m_messages.empty()){
+                processMessage(m_messages.front());
+                m_messages.pop_front();
+            }
+        }
     }
+}
+
+
+void OscInProcessor::processMessage(const string& message_from_c)
+{
     try{
         //print_time_stamp('B');
-        osc::ReceivedPacket packet_fom_c(c_message, size);
-        osc::ReceivedMessage message(packet_fom_c);
+        osc::ReceivedPacket packet(message_from_c.c_str(), message_from_c.size());
+        osc::ReceivedMessage message(packet);
 
         string addressPattern(message.AddressPattern());
         m_logger.info("Received OSC message with address pattern: {}", addressPattern);
