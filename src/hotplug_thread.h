@@ -18,7 +18,7 @@ public:
     {
         std::vector<std::string> lastAvailablePorts = MidiIn::getInputNames();
         while (!threadShouldExit()){
-            wait(1000);
+            wait(500);
             auto newAvailablePorts = MidiIn::getInputNames();
             // Was something added or removed?
             if (newAvailablePorts != lastAvailablePorts) {

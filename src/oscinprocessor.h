@@ -25,16 +25,21 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <deque>
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "osc/OscReceivedElements.h"
 #include "midiout.h"
 #include "monitorlogger.h"
 
-class OscInProcessor {
+
+
+class OscInProcessor : public Thread{
 public:
+    OscInProcessor() : Thread("oscinprocessor thread"){}
+
     void prepareOutputs(const std::vector<std::string>& outputNames);
 
-    void ProcessMessage(long flush_count, const char *c_message, std::size_t size);
+    void processMessage(const std::string& message_from_c);
 
     ~OscInProcessor()
     {
@@ -45,6 +50,9 @@ public:
     std::string getMidiOutName(int n) const;
     std::string getNormalizedMidiOutName(int n) const;
     int getMidiOutId(int n) const;
+
+    bool addMessage(const char* c_message, std::size_t size);
+    void flushMessages();
 
     static const std::vector<std::string> getKnownOscMessages();
 
@@ -71,5 +79,12 @@ private:
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
 
-    std::mutex m_mutex;
+    WaitableEvent m_data_in_midi_queue;
+    std::mutex m_messages_mutex;
+    std::deque<std::string> m_messages;
+
+    void run() override;
 };
+
+
+

@@ -25,7 +25,6 @@
 #include <iostream>
 #include <atomic>
 #include "sp_midi.h"
-#include "message_thread.h"
 #include "hotplug_thread.h"
 #include "scheduler_callback_thread.h"
 #include "midiout.h"
@@ -49,12 +48,9 @@ static std::unique_ptr<OscInProcessor> oscInputProcessor;
 // MIDI in
 vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
 
-OscMessageManagerThread *msg_thread = nullptr;
-
 HotPlugThread *hotplug_thread = nullptr;
 
 SchedulerCallbackThread *scheduler_callback_thread = nullptr;
-
 
 static ErlNifPid midi_process_pid;
 
@@ -116,30 +112,9 @@ void output_time_stamps()
 }
 
 
-// This is needed because there is no way to purge the Juce Message queue, so we just have "generations",
-// and do not process the messages that are not in the current generation
-// We want to limit the midi messages in transit to a low number (say 100), so throttle them
-// This is to avoid building a big backlog of MIDI messages we want to send them too fast
-std::atomic<long> g_flush_count(0);
-std::atomic<long> g_midi_send_in_transit(0);
-const int MAX_MIDI_SEND_QUEUE = 100;
 int sp_midi_send(const char* c_message, unsigned int size)
 {
-    //print_time_stamp('A');
-    // This calls the ProcessMessage asynchronously on the message manager, which has its own thread
-    // Copy the pointer to our own char[] to avoid losing it when it's get called asynchronously
-    char message[1024];
-    memcpy(message, c_message, static_cast<size_t>(size)+1);
-    auto current_flush_count = g_flush_count.load();
-
-    // Count up message in "queue"
-    g_midi_send_in_transit++;
-    if (g_midi_send_in_transit.load() > MAX_MIDI_SEND_QUEUE){
-        return -1;
-    }
-    bool rc = msg_thread->callAsync([current_flush_count, message, size]() {
-      oscInputProcessor->ProcessMessage(current_flush_count, message, size);
-    });
+    oscInputProcessor->addMessage(c_message, size);
 
     return 0;
 }
@@ -169,16 +144,13 @@ int sp_midi_init()
         return -1;
     }
 
+    oscInputProcessor->startThread();
+
     scheduler_callback_thread = new SchedulerCallbackThread;
     scheduler_callback_thread->startThread();
 
-    msg_thread = new OscMessageManagerThread;
-    msg_thread->startThread();
-
     hotplug_thread = new HotPlugThread;
     hotplug_thread->startThread();
-
-    while (!msg_thread->isReady());
 
     return 0;
 }
@@ -191,15 +163,24 @@ void sp_midi_deinit()
     g_already_initialized = false;
     //output_time_stamps();
 
+    // We tell the threads that we are going to exit. We need to do it this way because there is no MessageManager
+    oscInputProcessor->signalThreadShouldExit();
+    hotplug_thread->signalThreadShouldExit();
+    scheduler_callback_thread->signalThreadShouldExit();
+
+    // We give them some time to exit
+    Thread::sleep(1000);
+
+    // And we stop them
+    oscInputProcessor->stopThread(0);
     midiInputProcessors.clear();
     oscInputProcessor.reset(nullptr);
 
-    hotplug_thread->stopThread(2000);
+    hotplug_thread->stopThread(0);
     delete hotplug_thread;
 
-    msg_thread->stopDispatchLoop();
-    bool rc = msg_thread->stopThread(500);
-    delete msg_thread;
+    scheduler_callback_thread->stopThread(0);
+    delete scheduler_callback_thread;
 
     DeletedAtShutdown::deleteAll();
 }
@@ -295,7 +276,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 ERL_NIF_TERM sp_midi_flush_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    g_flush_count++;
+    oscInputProcessor->flushMessages();
     return enif_make_atom(env, "ok");
 }
 
