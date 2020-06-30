@@ -40,30 +40,70 @@ void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 // TODO: during initial testing to measure latency of async calls
 void print_time_stamp(char type);
 
-bool OscInProcessor::addMessage(const char* c_message, std::size_t size)
-{
-    lock_guard<mutex> lock(m_messages_mutex);
-    m_messages.emplace_back(c_message, size);
-    m_data_in_midi_queue.signal();
+bool OscInProcessor::addMessage(const char* c_message, std::size_t size, long long time)
+{    
+    struct timeAndString ts { time, { c_message, size }, m_messageId++ };
+    lock_guard<mutex> lock(m_MessagesMutex);
+    m_messages.insert(ts);
+    m_addedData.signal();    
     return true;
 }
 
+void OscInProcessor::signalWaitableEventToAllowExit()
+{
+    m_addedData.signal();
+}
 
 void OscInProcessor::flushMessages()
 {
-    lock_guard<mutex> lock(m_messages_mutex);
+    lock_guard<mutex> lock(m_MessagesMutex);
     m_messages.clear();
 }
 
+extern long long sp_midi_get_current_time_microseconds();
 
 void OscInProcessor::run()
 {
+    // First time we wait until we are signalled
+    long long waitFor = -1;
+    int test = 0;
+
     while (!threadShouldExit()){
-        if (m_data_in_midi_queue.wait(500) == true){
-            lock_guard<mutex> lock(m_messages_mutex);
-            while (!m_messages.empty()){
-                processMessage(m_messages.front());
-                m_messages.pop_front();
+        m_addedData.wait(waitFor); // We do not care if we were woken up by time or signal. The process is the same
+        set<timeAndString>::const_iterator firstMessage;
+        {
+            lock_guard<mutex> lock(m_MessagesMutex);
+            // If the queue is empty we try again (this should only happen at exit time)
+            if (m_messages.empty()){
+                waitFor = -1;
+                continue;
+            }
+            // When is the next message due?
+            firstMessage = m_messages.cbegin();
+        }
+        long long nextTimerShot = firstMessage->time;
+
+        // How far is it in the future?
+        long long currentTime = sp_midi_get_current_time_microseconds();
+        waitFor = (nextTimerShot - currentTime) / 1000;
+
+        // If it is less than 1ms away or in the past, fire it. 
+        if (waitFor < 1) {
+                std::lock_guard<std::mutex> guard(m_MessagesMutex);                
+                processMessage(firstMessage->message);
+                // ... and remove it from the pending messages
+                m_messages.erase(firstMessage);            
+        }
+        // And we check when the next one is due
+        {
+            lock_guard<mutex> lock(m_MessagesMutex);
+            if (m_messages.empty()){
+                waitFor = -1;
+            }
+            else{
+                firstMessage = m_messages.cbegin();
+                currentTime = sp_midi_get_current_time_microseconds();
+                waitFor = (firstMessage->time - currentTime) / 1000;
             }
         }
     }

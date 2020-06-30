@@ -36,15 +36,15 @@ int main()
     free(midi_ins);
 
 
-    sp_midi_send(osc_string_on, 32);
+    sp_midi_send(osc_string_on, 32, 0);
     getchar();
-    sp_midi_send(osc_string_off, 32);
+    sp_midi_send(osc_string_off, 32, 0);
 
     for (int i = 0; i < 100; i++) {
         Sleep(1);
-        sp_midi_send(osc_string_on, 32);
+        sp_midi_send(osc_string_on, 32, 0);
         Sleep(1);
-        sp_midi_send(osc_string_off, 32); 
+        sp_midi_send(osc_string_off, 32, 0); 
     }
 
     getchar();

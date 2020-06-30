@@ -112,9 +112,9 @@ void output_time_stamps()
 }
 
 
-int sp_midi_send(const char* c_message, unsigned int size)
+int sp_midi_send(const char* c_message, unsigned int size, long long time)
 {
-    oscInputProcessor->addMessage(c_message, size);
+    oscInputProcessor->addMessage(c_message, size, time);
 
     return 0;
 }
@@ -165,6 +165,7 @@ void sp_midi_deinit()
 
     // We tell the threads that we are going to exit. We need to do it this way because there is no MessageManager
     oscInputProcessor->signalThreadShouldExit();
+    oscInputProcessor->signalWaitableEventToAllowExit();
     hotplug_thread->signalThreadShouldExit();
     scheduler_callback_thread->signalThreadShouldExit();
 
@@ -267,7 +268,30 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     const char *c_message = (char *)bin.data;
     int size = (int)bin.size;
 
-    int rc = sp_midi_send(c_message, size);
+    int rc = sp_midi_send(c_message, size, 0);
+    if (rc != 0){
+        return enif_make_atom(env, "warning");
+    }
+    return enif_make_atom(env, "ok");
+}
+
+ERL_NIF_TERM sp_midi_send_timed_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary bin;
+    int ret = enif_inspect_binary(env, argv[0], &bin);
+    if (!ret)
+    {
+        return enif_make_badarg(env);
+    }
+    const char* c_message = (char*)bin.data;
+    int size = (int)bin.size;
+    
+    ErlNifSInt64 time;
+    if (!enif_get_int64(env, argv[1], &time)){
+        return enif_make_badarg(env);
+    }
+
+    int rc = sp_midi_send(c_message, size, time);
     if (rc != 0){
         return enif_make_atom(env, "warning");
     }
@@ -373,6 +397,7 @@ static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
     {"midi_send", 1, sp_midi_send_nif},
+    {"midi_send_timed", 2, sp_midi_send_timed_nif},
     {"midi_flush", 0, sp_midi_flush_nif},
     {"midi_outs", 0, sp_midi_outs_nif},
     {"midi_ins", 0, sp_midi_ins_nif},

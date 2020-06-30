@@ -25,17 +25,29 @@
 #include <vector>
 #include <string>
 #include <mutex>
-#include <deque>
+#include <set>
+#include <fstream>
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "osc/OscReceivedElements.h"
 #include "midiout.h"
 #include "monitorlogger.h"
 
+struct timeAndString {
+    long long time;
+    std::string message;
+    int id;
+
+    friend bool operator<(const struct timeAndString& l, const struct timeAndString& r) {
+        return (l.time != r.time ? l.time < r.time : l.id < r.id);
+    }
+};
+
 
 
 class OscInProcessor : public Thread{
 public:
-    OscInProcessor() : Thread("oscinprocessor thread"){}
+    OscInProcessor() : Thread("oscinprocessor thread"), m_messageId(0){
+    }
 
     void prepareOutputs(const std::vector<std::string>& outputNames);
 
@@ -51,12 +63,17 @@ public:
     std::string getNormalizedMidiOutName(int n) const;
     int getMidiOutId(int n) const;
 
-    bool addMessage(const char* c_message, std::size_t size);
+    bool addMessage(const char* c_message, std::size_t size, long long time);
     void flushMessages();
+
+    // This is used to unblock the wait event, so that it can exit the run cycle
+    void signalWaitableEventToAllowExit();
 
     static const std::vector<std::string> getKnownOscMessages();
 
 private:
+    void run() override;
+
     void send(const std::string& outDevice, const MidiMessage& msg);
     void processClockMessage(const std::string& outDevice);
     void processStartMessage(const std::string& outDevice);
@@ -79,12 +96,9 @@ private:
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
 
-    WaitableEvent m_data_in_midi_queue;
-    std::mutex m_messages_mutex;
-    std::deque<std::string> m_messages;
+    WaitableEvent m_addedData;
+    std::mutex m_MessagesMutex;
+    std::set<struct timeAndString> m_messages;
+    int m_messageId;
 
-    void run() override;
 };
-
-
-

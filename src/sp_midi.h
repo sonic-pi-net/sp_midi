@@ -30,8 +30,9 @@ extern "C" {
      * 
      * @param c_message: pointer to the message (this is a binary message that might contain 0s in the middle)
      * @param size: size of the message. This is required since we cannot count on 0s to indicate its end
+     * @param time: absolute time when the MIDI note should be sent. 0 means immediately
      */
-    DllExport int sp_midi_send(const char *c_message, unsigned int size);
+    DllExport int sp_midi_send(const char *c_message, unsigned int size, long long time);
     
     /**
      * Get the list of output devices.
