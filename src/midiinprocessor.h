@@ -28,10 +28,10 @@
 #include "monitorlogger.h"
 #include "midiin.h"
 
-class MidiInProcessor : public MidiInputCallback {
+class MidiInProcessor : public juce::MidiInputCallback {
 public:
     MidiInProcessor(const std::string& inputName, bool isVirtual = false);
-    void handleIncomingMidiMessage(MidiInput* source, const juce::MidiMessage& midiMessage) override;
+    void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& midiMessage) override;
     int getInputId() const { return m_input->getPortId(); };
     std::string getInputNormalizedPortName() const { return m_input->getNormalizedPortName(); };
     std::string getInputPortname() const { return m_input->getPortName(); };

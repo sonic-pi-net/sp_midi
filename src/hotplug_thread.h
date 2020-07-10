@@ -9,7 +9,7 @@
 extern void prepareMidiProcessors(std::vector<std::unique_ptr<MidiInProcessor> >& midiInputProcessors);
 extern std::vector<std::unique_ptr<MidiInProcessor> > midiInputProcessors;
 
-class HotPlugThread : public Thread
+class HotPlugThread : public juce::Thread
 {
 public:
     HotPlugThread() : Thread("hotplug thread") { };

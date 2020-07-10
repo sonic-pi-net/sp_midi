@@ -67,6 +67,7 @@ else()
 endif()
 
 add_definitions(-DJUCE_ALSA_MIDI_NAME="sp_midi")
+add_definitions(-DJUCE_APP_CONFIG_HEADER="AppConfig.h")
 
 if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0600 -DJUCER_VS2015_78A5022=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000)

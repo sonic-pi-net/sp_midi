@@ -10,7 +10,7 @@ extern long long sp_midi_get_current_time_microseconds();
 
 
 // FIXME: make sure this is thread-safe (i.e. protect the m_pending_messages accesses)
-class SchedulerCallbackThread : public Thread
+class SchedulerCallbackThread : public juce::Thread
 {
     using TupleTimePidInteger = std::tuple<long long, ErlNifPid, long long>;
 public:
@@ -58,7 +58,7 @@ public:
             }
             
             // Wait for 10 ms if there is nothing happening soon, or as necessary if there is something less than 10ms away
-            wait(jmin(static_cast<long long>(10), time_to_next_message_millis));
+            wait(juce::jmin(static_cast<long long>(10), time_to_next_message_millis));
         }
     }
 

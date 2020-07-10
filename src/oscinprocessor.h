@@ -33,7 +33,7 @@
 
 
 
-class OscInProcessor : public Thread{
+class OscInProcessor : public juce::Thread{
 public:
     OscInProcessor() : Thread("oscinprocessor thread"){}
 
@@ -57,7 +57,7 @@ public:
     static const std::vector<std::string> getKnownOscMessages();
 
 private:
-    void send(const std::string& outDevice, const MidiMessage& msg);
+    void send(const std::string& outDevice, const juce::MidiMessage& msg);
     void processClockMessage(const std::string& outDevice);
     void processStartMessage(const std::string& outDevice);
     void processContinueMessage(const std::string& outDevice);
@@ -79,7 +79,7 @@ private:
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
 
-    WaitableEvent m_data_in_midi_queue;
+    juce::WaitableEvent m_data_in_midi_queue;
     std::mutex m_messages_mutex;
     std::deque<std::string> m_messages;
 
