@@ -25,6 +25,7 @@
 #include "utils.h"
 
 using namespace std;
+using namespace juce;
 
 MidiIn::MidiIn(const string& portName, MidiInputCallback* midiInputCallback, bool isVirtual)
 {

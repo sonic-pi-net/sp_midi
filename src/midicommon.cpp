@@ -24,6 +24,7 @@
 #include "midicommon.h"
 
 using namespace std;
+using namespace juce;
 
 map<string, int> MidiCommon::m_midiNameToJuceMidiId;
 map<string, int> MidiCommon::m_midiNameToStickyId;

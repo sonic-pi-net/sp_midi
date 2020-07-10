@@ -30,6 +30,7 @@
 #include "utils.h"
 
 using namespace std;
+using namespace juce;
 
 MidiInProcessor::MidiInProcessor(const std::string& inputName, bool isVirtual) : m_oscRawMidiMessage(false)
 {

@@ -24,13 +24,13 @@
 
 #include <vector>
 #include <string>
-#include "midicommon.h"
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "midicommon.h"
 
 // This class manages a MIDI input device as seen by JUCE
 class MidiIn : public MidiCommon {
 public:
-    MidiIn(const std::string& portName, MidiInputCallback* midiInputCallback, bool isVirtual = false);
+    MidiIn(const std::string& portName, juce::MidiInputCallback* midiInputCallback, bool isVirtual = false);
     MidiIn(const MidiIn&) = delete;
     MidiIn& operator=(const MidiIn&) = delete;
 
@@ -40,5 +40,5 @@ public:
 
 protected:
     void updateMidiDevicesNamesMapping() override;
-    std::unique_ptr<MidiInput> m_midiIn;
+    std::unique_ptr<juce::MidiInput> m_midiIn;
 };
