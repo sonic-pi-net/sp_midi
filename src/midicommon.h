@@ -46,19 +46,19 @@ public:
     std::string getNormalizedPortName() const;
     int getPortId() const;
 
-    static int getJuceMidiIdFromName(const std::string& portName);
+    static int getRtMidiIdFromName(const std::string& portName);
 
 protected:
     virtual void updateMidiDevicesNamesMapping() = 0;
     std::string m_portName;
     std::string m_normalizedPortName;
-    int m_juceMidiId;
+    int m_rtMidiId;
     int m_stickyId;
     static bool nameInStickyTable(const std::string& portName);
     unsigned int addNameToStickyTable(const std::string& portName);
     unsigned int getStickyIdFromName(const std::string& portName);
-    static std::map<std::string, int> m_midiNameToJuceMidiId;
-    static std::vector<std::string> m_midiJuceMidiIdToName;
+    static std::map<std::string, int> m_midiNameToRtMidiId;
+    static std::vector<std::string> m_midiRtMidiIdToName;
     static std::map<std::string, int> m_midiNameToStickyId;
     static unsigned int m_nStickyIds;
     MonitorLogger &m_logger{ MonitorLogger::getInstance() };

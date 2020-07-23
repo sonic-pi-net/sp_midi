@@ -26,9 +26,9 @@
 using namespace std;
 using namespace juce;
 
-map<string, int> MidiCommon::m_midiNameToJuceMidiId;
+map<string, int> MidiCommon::m_midiNameToRtMidiId;
 map<string, int> MidiCommon::m_midiNameToStickyId;
-vector<string> MidiCommon::m_midiJuceMidiIdToName;
+vector<string> MidiCommon::m_midiRtMidiIdToName;
 unsigned int MidiCommon::m_nStickyIds = 0;
 
 MidiCommon::MidiCommon() {}
@@ -58,19 +58,19 @@ bool MidiCommon::checkValid() const
 {
     auto strArray = MidiInput::getDevices();
     int nPorts = strArray.size();
-    if (m_juceMidiId >= nPorts)
+    if (m_rtMidiId >= nPorts)
         return false;
 
-    string nameForId = strArray[m_juceMidiId].toStdString();
+    string nameForId = strArray[m_rtMidiId].toStdString();
     if (nameForId != m_portName)
         return false;
 
     return true;
 }
 
-int MidiCommon::getJuceMidiIdFromName(const string& portName)
+int MidiCommon::getRtMidiIdFromName(const string& portName)
 {
-    return m_midiNameToJuceMidiId.at(portName);
+    return m_midiNameToRtMidiId.at(portName);
 }
 
 bool MidiCommon::nameInStickyTable(const string& portName)
