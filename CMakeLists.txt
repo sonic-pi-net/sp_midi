@@ -30,7 +30,6 @@ set(sp_midi_sources
     src/sp_midi.cpp
     src/midiin.cpp
     src/midiout.cpp
-    src/midiinprocessor.cpp
     src/midicommon.cpp
     src/oscinprocessor.cpp
     src/utils.cpp

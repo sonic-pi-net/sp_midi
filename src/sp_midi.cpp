@@ -47,7 +47,7 @@ using namespace juce;
 static std::unique_ptr<OscInProcessor> oscInputProcessor;
 
 // MIDI in
-vector<unique_ptr<MidiInProcessor> > midiInputProcessors;
+vector<unique_ptr<MidiIn> > midiInputs;
 
 HotPlugThread *hotplug_thread = nullptr;
 
@@ -67,16 +67,16 @@ static void prepareOscProcessorOutputs(unique_ptr<OscInProcessor>& oscInputProce
 }
 
 
-void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProcessors)
+void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
 {
     // Should we open all devices, or just the ones passed as parameters?
     vector<string> midiInputsToOpen = MidiIn::getInputNames();
 
-    midiInputProcessors.clear();
+    midiInputs.clear();
     for (const auto& input : midiInputsToOpen) {
         try {
-            auto midiInputProcessor = make_unique<MidiInProcessor>(input, false);
-            midiInputProcessors.push_back(std::move(midiInputProcessor));
+            auto midiInput = make_unique<MidiIn>(input, false);
+            midiInputs.push_back(std::move(midiInput));
         } catch (const std::out_of_range&) {
             cout << "The device " << input << " does not exist";
             throw;
@@ -139,7 +139,7 @@ int sp_midi_init()
 
     // Prepare the MIDI inputs
     try{
-        prepareMidiProcessors(midiInputProcessors);
+        prepareMidiInputs(midiInputs);
     } catch (const std::out_of_range&) {
         cout << "Error opening MIDI inputs" << endl;
         return -1;
@@ -174,7 +174,7 @@ void sp_midi_deinit()
 
     // And we stop them
     oscInputProcessor->stopThread(0);
-    midiInputProcessors.clear();
+    midiInputs.clear();
     oscInputProcessor.reset(nullptr);
 
     hotplug_thread->stopThread(0);

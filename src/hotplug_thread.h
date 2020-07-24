@@ -2,12 +2,12 @@
 #include <vector>
 #include <string>
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "midiinprocessor.h"
+#include "midiin.h"
 
 
 // FIXME: this should go into a header file
-extern void prepareMidiProcessors(std::vector<std::unique_ptr<MidiInProcessor> >& midiInputProcessors);
-extern std::vector<std::unique_ptr<MidiInProcessor> > midiInputProcessors;
+extern void prepareMidiInputs(std::vector<std::unique_ptr<MidiIn> >& midiInputs);
+extern std::vector<std::unique_ptr<MidiIn> > midiInputs;
 
 class HotPlugThread : public juce::Thread
 {
@@ -22,7 +22,7 @@ public:
             auto newAvailablePorts = MidiIn::getInputNames();
             // Was something added or removed?
             if (newAvailablePorts != lastAvailablePorts) {
-                prepareMidiProcessors(midiInputProcessors);
+                prepareMidiInputs(midiInputs);
                 lastAvailablePorts = newAvailablePorts;
             }
         }
