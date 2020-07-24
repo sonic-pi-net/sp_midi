@@ -25,10 +25,12 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <memory>
+#include <rtmidi/RtMidi.h>
 #include "midicommon.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
-// This class manages a MIDI output device as seen by JUCE
+// This class manages a MIDI output device
 class MidiOut : public MidiCommon {
 public:
     MidiOut(const std::string& portName);
@@ -45,5 +47,6 @@ protected:
     void updateMidiDevicesNamesMapping() override;
 
 private:
-    std::unique_ptr<juce::MidiOutput> m_midiOut;
+    std::unique_ptr<RtMidiOut> m_midiOut;
+    int m_midiPortNumber;
 };

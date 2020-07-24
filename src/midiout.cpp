@@ -40,43 +40,46 @@ MidiOut::MidiOut(const string& portName)
     else
         m_stickyId = getStickyIdFromName(m_portName);
 
-    m_juceMidiId = getJuceMidiIdFromName(m_portName);
+    m_rtMidiId = getRtMidiIdFromName(m_portName);
 
     // FIXME: need to check if name does not exist
-    m_midiOut = MidiOutput::openDevice(m_juceMidiId);
+    m_midiOut = make_unique<RtMidiOut>();
+    m_midiOut->openPort(m_rtMidiId);
 }
 
 MidiOut::~MidiOut()
 {
     m_logger.trace("MidiOut destructor for {}", m_portName);
+    m_midiOut->closePort();
 }
 
 void MidiOut::send(const juce::MidiMessage& message)
 {
     m_logger.info("Sending MIDI to: {} ->", m_portName);
     auto* data = message.getRawData();
-    for (int i = 0; i < message.getRawDataSize(); i++) {
+    int size = message.getRawDataSize();
+    for (int i = 0; i < size; i++) {
         m_logger.info("   [{:02x}]", data[i]);
     }
-    m_midiOut->sendMessageNow(message);
+    m_midiOut->sendMessage(data, size);
 }
 
 vector<string> MidiOut::getOutputNames()
 {
-    auto strArray = MidiOutput::getDevices();
-    int nPorts = strArray.size();
+    RtMidiOut outs;
+    int nPorts = outs.getPortCount();
     vector<string> names(nPorts);
 
     for (int i = 0; i < nPorts; i++) {
-        names[i] = strArray[i].toStdString();
+        names[i] = outs.getPortName(i);
     }
     return names;
 }
 
 void MidiOut::updateMidiDevicesNamesMapping()
 {
-    m_midiJuceMidiIdToName = MidiOut::getOutputNames();
-    for (int i = 0; i < m_midiJuceMidiIdToName.size(); i++) {
-        m_midiNameToJuceMidiId[m_midiJuceMidiIdToName[i]] = i;
+    m_midiRtMidiIdToName = MidiOut::getOutputNames();
+    for (int i = 0; i < m_midiRtMidiIdToName.size(); i++) {
+        m_midiNameToRtMidiId[m_midiRtMidiIdToName[i]] = i;
     }
 }
