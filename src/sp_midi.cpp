@@ -77,9 +77,9 @@ void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
         try {
             auto midiInput = make_unique<MidiIn>(input, false);
             midiInputs.push_back(std::move(midiInput));
-        } catch (const std::out_of_range&) {
-            cout << "The device " << input << " does not exist";
-            throw;
+        } catch (const RtMidiError& e) {
+            cout << "Could not open input device " << input << ": " << e.what() << endl;
+            //throw;
         }
     }
 }

@@ -35,6 +35,12 @@ set(sp_midi_sources
     src/utils.cpp
 )
 
+if(MSVC)
+    list(APPEND sp_midi_sources ${PROJECT_SOURCE_DIR}/external_libs/rtmidi/RtMidi.cpp)
+    include_directories(${PROJECT_SOURCE_DIR}/external_libs)
+    add_definitions(-D__WINDOWS_MM__)
+endif(MSVC)
+
 
 
 if(APPLE)

@@ -75,7 +75,6 @@ MidiIn::~MidiIn()
 
 void MidiIn::staticMidiCallback(double timeStamp, std::vector< unsigned char > *midiMessage, void *userData)
 {    
-    cout << "MIDI CALLBACK!!" << endl;
     MidiIn *midiIn = (MidiIn *)userData;
     midiIn->midiCallback(timeStamp, midiMessage);
 }

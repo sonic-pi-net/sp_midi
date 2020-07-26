@@ -32,8 +32,14 @@ void OscInProcessor::prepareOutputs(const vector<string>& outputNames)
 {
     m_outputs.clear();
     for (auto& outputName : outputNames) {
-        auto midiOut = make_unique<MidiOut>(outputName);
-        m_outputs.push_back(std::move(midiOut));
+        try {
+            auto midiOut = make_unique<MidiOut>(outputName);
+            m_outputs.push_back(std::move(midiOut));
+        }
+        catch (const RtMidiError& e) {
+            cout << "Could not open output device " << outputName << ": " << e.what() << endl;
+            //throw;
+        }
     }
 }
 
