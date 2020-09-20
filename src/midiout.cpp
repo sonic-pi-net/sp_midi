@@ -53,15 +53,13 @@ MidiOut::~MidiOut()
     m_midiOut->closePort();
 }
 
-void MidiOut::send(const juce::MidiMessage& message)
+void MidiOut::send(const std::vector< unsigned char >* msg)
 {
     m_logger.info("Sending MIDI to: {} ->", m_portName);
-    auto* data = message.getRawData();
-    int size = message.getRawDataSize();
-    for (int i = 0; i < size; i++) {
-        m_logger.info("   [{:02x}]", data[i]);
+    for (int i = 0; i < msg->size(); i++) {
+        m_logger.info("   [{:02x}]", (*msg)[i]);
     }
-    m_midiOut->sendMessage(data, size);
+    m_midiOut->sendMessage(msg);
 }
 
 vector<string> MidiOut::getOutputNames()

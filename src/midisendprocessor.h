@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016 Luis Lloret
+// Copyright (c) 2016 - 2020 Luis Lloret
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,19 +27,23 @@
 #include <mutex>
 #include <deque>
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "osc/OscReceivedElements.h"
 #include "midiout.h"
 #include "monitorlogger.h"
 
 
-
 class OscInProcessor : public juce::Thread{
+private:
+    typedef struct{
+        std::string device_name;
+        std::vector<unsigned char> midi;
+    } MidiDeviceAndMessage;
+
 public:
     OscInProcessor() : Thread("oscinprocessor thread"){}
 
     void prepareOutputs(const std::vector<std::string>& outputNames);
 
-    void processMessage(const std::string& message_from_c);
+    void processMessage(const MidiDeviceAndMessage& message_from_c);
 
     ~OscInProcessor()
     {
@@ -51,37 +55,20 @@ public:
     std::string getNormalizedMidiOutName(int n) const;
     int getMidiOutId(int n) const;
 
-    bool addMessage(const char* c_message, std::size_t size);
+    bool addMessage(const char* device_name, const unsigned char* c_message, std::size_t size);
     void flushMessages();
 
     static const std::vector<std::string> getKnownOscMessages();
 
 private:
-    void send(const std::string& outDevice, const juce::MidiMessage& msg);
-    void processClockMessage(const std::string& outDevice);
-    void processStartMessage(const std::string& outDevice);
-    void processContinueMessage(const std::string& outDevice);
-    void processStopMessage(const std::string& outDevice);
-    void processActiveSenseMessage(const std::string& outDevice);
-    void processRawMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processNoteOnMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processNoteOffMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processControlChangeMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processPitchBendMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processChannelPressureMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processPolyPressureMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processProgramChangeMessage(const std::string& outDevice, const osc::ReceivedMessage& message);
-    void processLogLevelMessage(const osc::ReceivedMessage& message);
-
-    //bool validateMessage(const std::string& warningPre, const std::string& validationString, const osc::ReceivedMessage& message);
-    void dumpOscBody(const osc::ReceivedMessage& message);
-
+    void send(const std::string& outDevice, const std::vector< unsigned char >* msg);
+    
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
 
     juce::WaitableEvent m_data_in_midi_queue;
     std::mutex m_messages_mutex;
-    std::deque<std::string> m_messages;
+    std::deque<MidiDeviceAndMessage> m_messages;
 
     void run() override;
 };
