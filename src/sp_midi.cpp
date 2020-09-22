@@ -30,7 +30,6 @@
 #include "midiout.h"
 #include "midiin.h"
 #include "midisendprocessor.h"
-#include "midiinprocessor.h"
 #include "osc/OscOutboundPacketStream.h"
 #include "version.h"
 #include "utils.h"
