@@ -101,7 +101,9 @@ vector<string> MidiIn::getInputNames()
     vector<string> names(nPorts);
 
     for (int i = 0; i < nPorts; i++) {
-        names[i] = ins.getPortName(i);
+        auto name = ins.getPortName(i);
+        local_utils::safeOscString(name);
+        names[i] = name;
     }
     return names;
 }

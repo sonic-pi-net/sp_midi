@@ -69,7 +69,9 @@ vector<string> MidiOut::getOutputNames()
     vector<string> names(nPorts);
 
     for (int i = 0; i < nPorts; i++) {
-        names[i] = outs.getPortName(i);
+        auto name = outs.getPortName(i);
+        local_utils::safeOscString(name);
+        names[i] = name;
     }
     return names;
 }
