@@ -39,7 +39,10 @@ if(MSVC)
     add_definitions(-D__WINDOWS_MM__)
 endif(MSVC)
 
-
+if(APPLE)
+    list(APPEND sp_midi_sources ${PROJECT_SOURCE_DIR}/external_libs/rtmidi/RtMidi.cpp)
+    add_definitions(-D__MACOSX_CORE__)
+endif(APPLE)
 
 if(APPLE)
     set(juce_sources
