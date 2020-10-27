@@ -23,11 +23,9 @@
 #include <iostream>
 #include "sp_midi.h"
 #include "midiin.h"
-#include "osc/OscOutboundPacketStream.h"
 #include "utils.h"
 
 using namespace std;
-using namespace juce;
 
 MidiIn::MidiIn(const string& portName, bool isVirtual) : m_oscRawMidiMessage(false)
 {
