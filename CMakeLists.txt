@@ -23,9 +23,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 #set(oscpack_path ${PROJECT_SOURCE_DIR}/external_libs/oscpack_1_1_0)
 #add_subdirectory(${oscpack_path})
-include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules ${PROJECT_SOURCE_DIR}/external_libs/cxxopts ${PROJECT_SOURCE_DIR}/external_libs)
-#include_directories(${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules ${PROJECT_SOURCE_DIR}/external_libs/cxxopts)
-
+if(WIN32)
+ include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules ${PROJECT_SOURCE_DIR}/external_libs/cxxopts ${PROJECT_SOURCE_DIR}/external_libs)
+elseif(APPLE)
+ include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules ${PROJECT_SOURCE_DIR}/external_libs/cxxopts ${PROJECT_SOURCE_DIR}/external_libs)
+else()
+ include_directories(${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include JuceLibraryCode JuceLibraryCode/modules ${PROJECT_SOURCE_DIR}/external_libs/cxxopts)
+endif()
 
 set(sp_midi_sources
     src/sp_midi.cpp
