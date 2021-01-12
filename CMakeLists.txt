@@ -22,11 +22,11 @@ endif(APPLE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(WIN32)
- include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue ${PROJECT_SOURCE_DIR}/external_libs)
+ include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-1.8.2/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue ${PROJECT_SOURCE_DIR}/external_libs)
 elseif(APPLE)
- include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue ${PROJECT_SOURCE_DIR}/external_libs)
+ include_directories( ${PROJECT_SOURCE_DIR}/external_libs/spdlog-1.8.2/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue ${PROJECT_SOURCE_DIR}/external_libs)
 else()
- include_directories(${PROJECT_SOURCE_DIR}/external_libs/spdlog-0.11.0/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue)
+ include_directories(${PROJECT_SOURCE_DIR}/external_libs/spdlog-1.8.2/include ${PROJECT_SOURCE_DIR}/external_libs/concurrentqueue)
 endif()
 
 set(sp_midi_sources
