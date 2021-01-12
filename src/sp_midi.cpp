@@ -48,11 +48,11 @@ vector<unique_ptr<MidiIn> > midiInputs;
 
 // Threading
 HotPlugThread *hotplug_thread = nullptr;
-std::atomic<bool> g_threadsShouldFinish = false;
+std::atomic<bool> g_threadsShouldFinish { false };
 
 static ErlNifPid midi_process_pid;
 
-static atomic<bool> g_already_initialized(false);
+static atomic<bool> g_already_initialized { false };
 
 void prepareMidiSendProcessorOutputs(unique_ptr<MidiSendProcessor>& midiSendProcessor)
 {
