@@ -23,4 +23,9 @@ steps:
   inputs:
     workingDirectory: 'build' # Optional
     cmakeArgs: '..'
+    
+- task: CMake@1
+  inputs:
+    cmakeArgs: --build . --config Release
+
 
