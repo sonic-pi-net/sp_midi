@@ -24,7 +24,7 @@ jobs:
     
     - name: Fetch packages
       if: runner.os == 'Linux'
-      run: sudo apt-get install libasound2-dev
+      run: sudo apt-get install libasound2-dev erlang-dev
 
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
