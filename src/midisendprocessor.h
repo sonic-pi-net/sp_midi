@@ -24,31 +24,30 @@
 #include <memory.h>
 #include <vector>
 #include <string>
-#include <mutex>
-#include <deque>
-#include "../JuceLibraryCode/JuceHeader.h"
+#include <thread>
+#include "blockingconcurrentqueue.h"
 #include "midiout.h"
 #include "monitorlogger.h"
 
+extern std::atomic<bool> g_threadsShouldFinish;
 
-class MidiSendProcessor : public juce::Thread{
+class MidiSendProcessor
+{
 private:
     typedef struct{
         std::string device_name;
         std::vector<unsigned char> midi;
     } MidiDeviceAndMessage;
 
-public:
-    MidiSendProcessor() : Thread("midisendprocessor thread"){}
+public:    
+    ~MidiSendProcessor();
+
+    void startThread();
 
     void prepareOutputs(const std::vector<std::string>& outputNames);
 
     void processMessage(const MidiDeviceAndMessage& message_from_c);
 
-    ~MidiSendProcessor()
-    {
-        m_logger.trace("MidiSendProcessor destructor");
-    }
 
     int getNMidiOuts() const;
     std::string getMidiOutName(int n) const;
@@ -66,11 +65,10 @@ private:
     std::vector<std::unique_ptr<MidiOut> > m_outputs;
     MonitorLogger& m_logger{ MonitorLogger::getInstance() };
 
-    juce::WaitableEvent m_data_in_midi_queue;
-    std::mutex m_messages_mutex;
-    std::deque<MidiDeviceAndMessage> m_messages;
+    moodycamel::BlockingConcurrentQueue<MidiDeviceAndMessage> m_messages;
 
-    void run() override;
+    std::thread m_thread;
+    void run();
 };
 
 

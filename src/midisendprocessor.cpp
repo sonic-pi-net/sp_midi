@@ -24,7 +24,23 @@
 #include "midisendprocessor.h"
 #include "utils.h"
 
+
 using namespace std;
+using namespace moodycamel;
+
+
+void MidiSendProcessor::startThread()
+{
+    m_thread = std::thread(&MidiSendProcessor::run, this);
+}
+
+MidiSendProcessor::~MidiSendProcessor()
+{
+    m_logger.trace("MidiSendProcessor destructor");
+    if (m_thread.joinable()){
+        m_thread.join();
+    }
+}
 
 
 void MidiSendProcessor::prepareOutputs(const vector<string>& outputNames)
@@ -47,32 +63,28 @@ void print_time_stamp(char type);
 
 bool MidiSendProcessor::addMessage(const char* device_name, const unsigned char* c_message, std::size_t size)
 {
-    lock_guard<mutex> lock(m_messages_mutex);
     vector<unsigned char> midi_data;
     midi_data.assign(c_message, c_message + size);
     MidiDeviceAndMessage msg{ device_name, midi_data };
-    m_messages.emplace_back(msg);
-    m_data_in_midi_queue.signal();
+    m_messages.enqueue(std::move(msg));
     return true;
 }
 
 
+// Perhaps we should remove this function? If not, consider having a mutex so that the removal happens atomically in respect to the run thread or adding
 void MidiSendProcessor::flushMessages()
 {
-    lock_guard<mutex> lock(m_messages_mutex);
-    m_messages.clear();
+    //m_messages.clear();
 }
 
 
 void MidiSendProcessor::run()
 {
-    while (!threadShouldExit()){
-        if (m_data_in_midi_queue.wait(500) == true){
-            lock_guard<mutex> lock(m_messages_mutex);
-            while (!m_messages.empty()){
-                processMessage(m_messages.front());
-                m_messages.pop_front();
-            }
+    MidiDeviceAndMessage msg;
+    while (!g_threadsShouldFinish){
+        bool available = m_messages.wait_dequeue_timed(msg, std::chrono::milliseconds(500));
+        if (available){
+            processMessage(msg);            
         }
     }
 }

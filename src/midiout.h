@@ -28,7 +28,6 @@
 #include <memory>
 #include <rtmidi/RtMidi.h>
 #include "midicommon.h"
-//#include "../JuceLibraryCode/JuceHeader.h"
 
 // This class manages a MIDI output device
 class MidiOut : public MidiCommon {

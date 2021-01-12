@@ -2,10 +2,10 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include "../JuceLibraryCode/JuceHeader.h"
 #include "midiin.h"
 #include "midisendprocessor.h"
 
+extern std::atomic<bool> g_threadsShouldFinish;
 
 // FIXME: this should go into a header file
 void prepareMidiInputs(std::vector<std::unique_ptr<MidiIn> >& midiInputs);
@@ -13,17 +13,26 @@ extern std::vector<std::unique_ptr<MidiIn> > midiInputs;
 void prepareMidiSendProcessorOutputs(std::unique_ptr<MidiSendProcessor>& midiSendProcessor);
 extern std::unique_ptr<MidiSendProcessor> midiSendProcessor;
 
-class HotPlugThread : public juce::Thread
+class HotPlugThread
 {
-public:
-    HotPlugThread() : Thread("hotplug thread") { };
+public:    
+    HotPlugThread::~HotPlugThread()
+    {
+        if (m_thread.joinable()){
+            m_thread.join();
+        }
+    }
 
-    void run() override
+    void startThread(){
+        m_thread = std::thread(&HotPlugThread::run, this);
+    }
+
+    void run()
     {
         std::vector<std::string> lastAvailableInputPorts = MidiIn::getInputNames();
         std::vector<std::string> lastAvailableOutputPorts = MidiOut::getOutputNames();
-        while (!threadShouldExit()){
-            wait(500);
+        while (!g_threadsShouldFinish){
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             auto newAvailableInputPorts = MidiIn::getInputNames();
             // Was something added or removed?
             if (newAvailableInputPorts != lastAvailableInputPorts) {
@@ -40,4 +49,6 @@ public:
 
         }
     }
+private:
+    std::thread m_thread;
 };
