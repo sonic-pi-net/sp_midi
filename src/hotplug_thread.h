@@ -15,8 +15,8 @@ extern std::unique_ptr<MidiSendProcessor> midiSendProcessor;
 
 class HotPlugThread
 {
-public:    
-    HotPlugThread::~HotPlugThread()
+public:
+    ~HotPlugThread()
     {
         if (m_thread.joinable()){
             m_thread.join();
