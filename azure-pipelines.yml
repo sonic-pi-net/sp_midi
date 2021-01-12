@@ -22,5 +22,5 @@ steps:
 - task: CMake@1
   inputs:
     workingDirectory: 'build' # Optional
-    #cmakeArgs: # Optional
+    cmakeArgs: '..'
 
