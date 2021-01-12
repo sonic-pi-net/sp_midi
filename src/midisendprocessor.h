@@ -25,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <mutex>
 #include "blockingconcurrentqueue.h"
 #include "midiout.h"
 #include "monitorlogger.h"
@@ -40,6 +41,7 @@ private:
     } MidiDeviceAndMessage;
 
 public:    
+    MidiSendProcessor() : m_flushing(false) {};
     ~MidiSendProcessor();
 
     void startThread();
@@ -68,6 +70,7 @@ private:
     moodycamel::BlockingConcurrentQueue<MidiDeviceAndMessage> m_messages;
 
     std::thread m_thread;
+    std::atomic<bool> m_flushing;
     void run();
 };
 

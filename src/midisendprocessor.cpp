@@ -71,10 +71,14 @@ bool MidiSendProcessor::addMessage(const char* device_name, const unsigned char*
 }
 
 
-// Perhaps we should remove this function? If not, consider having a mutex so that the removal happens atomically in respect to the run thread or adding
 void MidiSendProcessor::flushMessages()
 {
-    //m_messages.clear();
+    m_flushing = true;
+    MidiDeviceAndMessage msg;
+    while (m_messages.try_dequeue(msg)) {
+        // Just discard the message
+    }
+    m_flushing = false;
 }
 
 
@@ -83,7 +87,7 @@ void MidiSendProcessor::run()
     MidiDeviceAndMessage msg;
     while (!g_threadsShouldFinish){
         bool available = m_messages.wait_dequeue_timed(msg, std::chrono::milliseconds(500));
-        if (available){
+        if (available && !m_flushing){
             processMessage(msg);            
         }
     }
