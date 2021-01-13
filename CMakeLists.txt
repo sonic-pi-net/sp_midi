@@ -11,6 +11,8 @@ if(NOT MSVC)
     endif(APPLE)
 endif(NOT MSVC)
 
+
+# If we need to change something based on this running on CI, we can use if(DEFINED ENV{GITHUB_ACTION})
 if(APPLE)
     set(ERLANG_INCLUDE_PATH "/usr/local/lib/erlang/usr/include" CACHE PATH "Path to erlang includes")
 elseif(UNIX)
