@@ -68,7 +68,7 @@ if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0600)
     include_directories(${ERLANG_INCLUDE_PATH})
     target_link_libraries(libsp_midi winmm)
-    # example test exe. Only under Windows, because on the others, the NIF functions are resolved when linked to the erlnag VM, not on the library
+    # example test exe. Only under Windows, because on the others, the NIF functions are resolved when linked to the erlang VM, not on the library
     add_executable(sp_midi_test src/sp_midi_test.c)
     target_link_libraries(sp_midi_test libsp_midi)
 elseif(APPLE)
