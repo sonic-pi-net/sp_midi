@@ -31,6 +31,7 @@ jobs:
     - name: Fetch packages (Mac)
       if: runner.os == 'macOS'
       run: |
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew update
         brew install erlang     
 
