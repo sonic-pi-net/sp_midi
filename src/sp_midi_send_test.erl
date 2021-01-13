@@ -20,15 +20,13 @@ send_midis(0) ->
 
 send_midis(N) ->
     io:fwrite("In send_midis ~p~n", [N]),
-    Aon = binary:list_to_bin("/*/note_on"),
-    Mon = <<Aon/binary, <<0, 0, 44, 105, 105, 105, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 64, 0, 0, 0, 100>>/binary >>,
-    Aoff = binary:list_to_bin("/*/note_off"),
-    Moff = << Aoff/binary, <<0, 44, 105, 105, 105, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 64, 0, 0, 0, 100>>/binary >>,
+    Mon = <<144, 60, 100>>,
+    Moff = <<128, 60, 0>>,
 
-    sp_midi:midi_send(Mon),
-    %timer:sleep(10),
-    sp_midi:midi_send(Moff),
-    %timer:sleep(100),
+    sp_midi:midi_send("*", Mon),
+    timer:sleep(1000),
+    sp_midi:midi_send("*", Moff),
+    timer:sleep(1000),
 
     send_midis(N-1).
 
@@ -49,7 +47,7 @@ start() ->
     io:fwrite("MIDI OUTs:~p~n", [OUTS]),
 
     io:fwrite("Sending note ON and OFF every 100 ms and waiting 100 ms~n"),
-    send_midis(10000),
+    send_midis(10),
     io:fwrite("FINISHED sending note ON and OFF~n"),
 
     timer:sleep(1000).

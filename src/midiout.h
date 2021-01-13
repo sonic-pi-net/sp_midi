@@ -28,7 +28,6 @@
 #include <memory>
 #include <rtmidi/RtMidi.h>
 #include "midicommon.h"
-#include "../JuceLibraryCode/JuceHeader.h"
 
 // This class manages a MIDI output device
 class MidiOut : public MidiCommon {
@@ -39,9 +38,10 @@ public:
 
     ~MidiOut();
 
-    void send(const juce::MidiMessage& message);
+    void send(const std::vector< unsigned char >* msg);
 
     static std::vector<std::string> getOutputNames();
+    static std::vector<std::string> getNonRtMidiOutputNames();
 
 protected:
     void updateMidiDevicesNamesMapping() override;

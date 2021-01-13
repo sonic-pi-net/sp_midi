@@ -28,7 +28,6 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "../JuceLibraryCode/JuceHeader.h"
 #include "monitorlogger.h"
 
 // This class manages the common parts of our MIDI handling, like sticky ids
@@ -39,8 +38,6 @@ public:
     MidiCommon& operator=(const MidiCommon&) = delete;
 
     virtual ~MidiCommon();
-
-    bool checkValid() const;
 
     std::string getPortName() const;
     std::string getNormalizedPortName() const;

@@ -25,7 +25,6 @@
 #include "utils.h"
 
 using namespace std;
-using namespace juce;
 
 MidiOut::MidiOut(const string& portName)
 {
@@ -53,15 +52,13 @@ MidiOut::~MidiOut()
     m_midiOut->closePort();
 }
 
-void MidiOut::send(const juce::MidiMessage& message)
+void MidiOut::send(const std::vector< unsigned char >* msg)
 {
     m_logger.info("Sending MIDI to: {} ->", m_portName);
-    auto* data = message.getRawData();
-    int size = message.getRawDataSize();
-    for (int i = 0; i < size; i++) {
-        m_logger.info("   [{:02x}]", data[i]);
+    for (int i = 0; i < msg->size(); i++) {
+        m_logger.info("   [{:02x}]", (*msg)[i]);
     }
-    m_midiOut->sendMessage(data, size);
+    m_midiOut->sendMessage(msg);
 }
 
 vector<string> MidiOut::getOutputNames()
@@ -71,9 +68,29 @@ vector<string> MidiOut::getOutputNames()
     vector<string> names(nPorts);
 
     for (int i = 0; i < nPorts; i++) {
-        names[i] = outs.getPortName(i);
+        auto name = outs.getPortName(i);
+        local_utils::safeOscString(name);
+        names[i] = name;
     }
     return names;
+}
+
+vector<string> MidiOut::getNonRtMidiOutputNames()
+{
+  vector<string> all_names = getOutputNames();
+  vector<string> filtered_names;
+
+  for (int i = 0; i < all_names.size() ; i++) {
+    auto s = all_names[i];
+    if (s.rfind("rtmidi_", 0) == 0) {
+      // The fact that the port name starts with rtmidi tells us that
+      // this is a virtual midi port created by RtMidi - ignore it
+    } else {
+      filtered_names.push_back(s);
+    }
+  }
+
+  return filtered_names;
 }
 
 void MidiOut::updateMidiDevicesNamesMapping()

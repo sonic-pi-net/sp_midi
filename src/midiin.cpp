@@ -23,11 +23,9 @@
 #include <iostream>
 #include "sp_midi.h"
 #include "midiin.h"
-#include "osc/OscOutboundPacketStream.h"
 #include "utils.h"
 
 using namespace std;
-using namespace juce;
 
 MidiIn::MidiIn(const string& portName, bool isVirtual) : m_oscRawMidiMessage(false)
 {
@@ -79,184 +77,17 @@ void MidiIn::staticMidiCallback(double timeStamp, std::vector< unsigned char > *
     midiIn->midiCallback(timeStamp, midiMessage);
 }
 
+
+int send_midi_osc_to_erlang(const char* device_name, const unsigned char* data, size_t size);
 void MidiIn::midiCallback(double timeStamp, std::vector< unsigned char > *midiMessage)
 {
     lock_guard<mutex> lock(m_cb_mutex);
-    unsigned char channel = 0xff, status = 0;
-    string message_type;
-    const uint8_t* message = midiMessage->data();
-    int nBytes = midiMessage->size();
-
-    assert(nBytes > 0);
-
-    if ((message[0] & 0xf0) != 0xf0) {
-        channel = message[0] & 0x0f;
-        channel++; // Make channel 1-16, instead of 0-15
-        status = message[0] & 0xf0;
-    } else {
-        status = message[0];
-    }
-
     m_logger.info("received MIDI message: ");
-    for (int i = 0; i < nBytes; i++) {
-        m_logger.info("   [{:02x}]", (unsigned int)message[i]);
+    for (int i = 0; i < midiMessage->size(); i++) {
+        m_logger.info("   [{:02x}]", (*midiMessage)[i]);
     }
-
-    // Process the message
-    switch (status) {
-    case 0x80:
-        message_type = "note_off";
-        assert(nBytes == 3);
-        break;
-
-    case 0x90:
-        message_type = "note_on";
-        assert(nBytes == 3);
-        break;
-
-    case 0xA0:
-        message_type = "polyphonic_key_pressure";
-        assert(nBytes == 3);
-        break;
-
-    case 0xB0:
-        message_type = "control_change";
-        assert(nBytes == 3);
-        break;
-
-    case 0xC0:
-        message_type = "program_change";
-        assert(nBytes == 2);
-        break;
-
-    case 0xD0:
-        message_type = "channel_pressure";
-        assert(nBytes == 2);
-        break;
-
-    case 0xE0:
-        message_type = "pitch_bend";
-        assert(nBytes == 3);
-        break;
-
-    case 0xF0:
-        message_type = "sysex";
-        // Remove the end of message marker if raw message is not specified
-        if (!m_oscRawMidiMessage)
-            nBytes--;
-        break;
-
-    case 0xF1:
-        message_type = "MTC";
-        assert(nBytes == 2);
-        break;
-
-    case 0xF2:
-        message_type = "song_position";
-        assert(nBytes == 3);
-        break;
-
-    case 0xF3:
-        message_type = "song_select";
-        assert(nBytes == 2);
-        break;
-
-    case 0xF4:
-    case 0xF5:
-        message_type = "syscommon_undefined";
-        assert(nBytes == 1);
-        break;
-
-    case 0xF6:
-        message_type = "tune_request";
-        assert(nBytes == 1);
-        break;
-
-    case 0xF8:
-        message_type = "clock";
-        assert(nBytes == 1);
-        break;
-
-    case 0xF9:
-    case 0xFD:
-        message_type = "sysrt_undefined";
-        assert(nBytes == 1);
-        break;
-
-    case 0xFA:
-        message_type = "start";
-        assert(nBytes == 1);
-        break;
-
-    case 0xFB:
-        message_type = "continue";
-        assert(nBytes == 1);
-        break;
-
-    case 0xFC:
-        message_type = "stop";
-        assert(nBytes == 1);
-        break;
-
-    case 0xFE:
-        message_type = "active_sensing";
-        assert(nBytes == 1);
-        break;
-
-    default:
-        message_type = "unknown_message";
-        break;
-    }
-
-    // Prepare the OSC address
-    stringstream path;
-    string normalizedPortName(getNormalizedPortName());
-    int portId = getPortId();
-    path << "/midi:" << normalizedPortName << ":" << portId << ":";
-    if (channel != 0xff) {
-        path << static_cast<int>(channel);
-    }
-    path << "/" << message_type;
-
-    // And now prepare the OSC message body
-    char buffer[1024];
-    osc::OutboundPacketStream p(buffer, 1024);
-    p << osc::BeginMessage(path.str().c_str());
-
-    // send the raw midi message as part of the body
-    // TODO: do we want a raw midi message?
-    if (m_oscRawMidiMessage) {
-        if (nBytes > 0) {
-            p << osc::Blob(message, static_cast<osc::osc_bundle_element_size_t>(nBytes));
-        }
-    } else {
-        // We treat the pitch bend differently. Instead of sending the bytes separately,
-        // we send the processed 14 bits value        
-        if (message[0] & 0xf0 == 0xe0){
-            p << (int)(message[1] | (message[2] << 7));
-        }
-        else {
-            for (int i = 1; i < nBytes; i++) {
-                p << (int)message[i];
-            }
-        }
-    }
-    p << osc::EndMessage;
-
-    // Dump the OSC message
-    m_logger.info("sending OSC: [{}] -> {}, {}", path.str(), portId, normalizedPortName);
-    if (m_oscRawMidiMessage) {
-        if (nBytes > 0) {
-            m_logger.info("  <raw_midi_message>");
-        }
-    } else {
-        for (int i = 1; i < nBytes; i++) {
-            m_logger.info("   [{:02x}]", (int)message[i]);
-        }
-    }
-
     // And send the message to the erlang process
-    send_midi_osc_to_erlang(p.Data(), p.Size());
+    send_midi_osc_to_erlang(getNormalizedPortName().c_str(), midiMessage->data(), midiMessage->size());
 }
 
 
@@ -268,10 +99,32 @@ vector<string> MidiIn::getInputNames()
     vector<string> names(nPorts);
 
     for (int i = 0; i < nPorts; i++) {
-        names[i] = ins.getPortName(i);
+        auto name = ins.getPortName(i);
+        local_utils::safeOscString(name);
+        names[i] = name;
     }
     return names;
 }
+
+vector<string> MidiIn::getNonRtMidiInputNames()
+{
+  vector<string> all_names = getInputNames();
+  vector<string> filtered_names;
+
+  for (int i = 0; i < all_names.size() ; i++) {
+    auto s = all_names[i];
+    if (s.rfind("rtmidi_", 0) == 0) {
+      // The fact that the port name starts with rtmidi tells us that
+      // this is a virtual midi port namecreated by RtMidi - ignore it
+    } else {
+      filtered_names.push_back(s);
+    }
+  }
+
+  return filtered_names;
+
+}
+
 
 void MidiIn::updateMidiDevicesNamesMapping()
 {
