@@ -14,8 +14,8 @@ or later.
 
 sp_midi uses the following Open Source libs:
 * spdlog, for logging (included in the tree)
-* concurrentqueue
-* rtmidi
+* concurrentqueue (included in the tree)
+* rtmidi (included in the tree)
 
 ## LICENSE
 See LICENSE.md file for details.
