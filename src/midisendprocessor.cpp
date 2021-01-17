@@ -48,7 +48,7 @@ void MidiSendProcessor::prepareOutputs(const vector<MidiPortInfo>& portsInfo)
     m_outputs.clear();
     for (auto& output : portsInfo) {
         try {
-          auto midiOut = make_unique<MidiOut>(output.portName, output.normalizedPortName, output.portId);
+            auto midiOut = make_unique<MidiOut>(output.portName, output.normalizedPortName, output.portId);
             m_outputs.push_back(std::move(midiOut));
         }
         catch (const RtMidiError& e) {

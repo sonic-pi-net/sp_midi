@@ -56,13 +56,13 @@ void MidiOut::send(const std::vector< unsigned char >* msg)
 
 vector<MidiPortInfo> MidiOut::getOutputPortInfo()
 {
-  RtMidiOut outs;
-  auto outs_info = getPortInfo(outs);
-  return outs_info;
+    RtMidiOut outs;
+    auto outs_info = getPortInfo(outs);
+    return outs_info;
 }
 
 vector<string> MidiOut::getNormalizedOutputNames()
 {
-  vector<MidiPortInfo> info = getOutputPortInfo();
-  return getNormalizedNamesFromPortInfos(info);
+    vector<MidiPortInfo> info = getOutputPortInfo();
+    return getNormalizedNamesFromPortInfos(info);
 }

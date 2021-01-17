@@ -58,7 +58,7 @@ static atomic<bool> g_already_initialized { false };
 void prepareMidiSendProcessorOutputs(unique_ptr<MidiSendProcessor>& midiSendProcessor)
 {
     // Open all MIDI devices. This is what Sonic Pi does
-      vector<MidiPortInfo> connectedOutputPortsInfo = MidiIn::getInputPortInfo();
+    vector<MidiPortInfo> connectedOutputPortsInfo = MidiIn::getInputPortInfo();
     {
         midiSendProcessor->prepareOutputs(connectedOutputPortsInfo);
     }
@@ -72,9 +72,9 @@ void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
 
     midiInputs.clear();
     for (const auto& input : connectedInputPortsInfo) {
-      try {
-          auto midiInput = make_unique<MidiIn>(input.portName, input.normalizedPortName, input.portId, false);
-          midiInputs.push_back(std::move(midiInput));
+        try {
+            auto midiInput = make_unique<MidiIn>(input.portName, input.normalizedPortName, input.portId, false);
+            midiInputs.push_back(std::move(midiInput));
         } catch (const RtMidiError& e) {
             cout << "Could not open input device " << input.portName << ": " << e.what() << endl;
             //throw;

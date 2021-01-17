@@ -36,10 +36,10 @@ MidiIn::MidiIn(const string& portName, const string& normalizedPortName, int por
 
     // FIXME: need to check if name does not exist
     if (!isVirtual) {
-      m_rtMidiId = portId;
-      m_midiIn = make_unique<RtMidiIn>();
-      m_midiIn->openPort(m_rtMidiId);
-      m_midiIn->ignoreTypes( false, false, false );
+        m_rtMidiId = portId;
+        m_midiIn = make_unique<RtMidiIn>();
+        m_midiIn->openPort(m_rtMidiId);
+        m_midiIn->ignoreTypes( false, false, false );
     }
 // TODO: do the virtual ports
 #if 0
@@ -86,13 +86,13 @@ void MidiIn::midiCallback(double timeStamp, std::vector< unsigned char > *midiMe
 
 vector<MidiPortInfo> MidiIn::getInputPortInfo()
 {
-  RtMidiIn ins;
-  auto ins_info = getPortInfo(ins);
-  return ins_info;
+    RtMidiIn ins;
+    auto ins_info = getPortInfo(ins);
+    return ins_info;
 }
 
 vector<string> MidiIn::getNormalizedInputNames()
 {
-  vector<MidiPortInfo> info = getInputPortInfo();
-  return getNormalizedNamesFromPortInfos(info);
+    vector<MidiPortInfo> info = getInputPortInfo();
+    return getNormalizedNamesFromPortInfos(info);
 }

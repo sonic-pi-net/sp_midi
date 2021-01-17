@@ -25,13 +25,13 @@
 
 struct MidiPortInfo
 {
-  std::string portName;
-  std::string normalizedPortName;
-  int portId;
+    std::string portName;
+    std::string normalizedPortName;
+    int portId;
 
-  bool operator==( const MidiPortInfo& rhs) const {
-    return (portName == rhs.portName) &&
-    (normalizedPortName == rhs.normalizedPortName) &&
-    (portId == rhs.portId);
-  }
+    bool operator==( const MidiPortInfo& rhs) const {
+        return (portName == rhs.portName) &&
+        (normalizedPortName == rhs.normalizedPortName) &&
+        (portId == rhs.portId);
+    }
 };
