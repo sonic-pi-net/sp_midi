@@ -76,7 +76,7 @@ unsigned int MidiCommon::getStickyIdFromName(const string& portName)
 
 std::vector<MidiPortInfo> MidiCommon::getPortInfo(RtMidi& ports)
 {
-    // int nPorts = ports.getPortCount();
+    int nPorts = ports.getPortCount();
     std::vector<MidiPortInfo> connectedInputPortsInfo;
 
     for (int i = 0; i < nPorts; i++) {
