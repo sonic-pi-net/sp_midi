@@ -43,16 +43,16 @@ MidiSendProcessor::~MidiSendProcessor()
 }
 
 
-void MidiSendProcessor::prepareOutputs(const vector<string>& outputNames)
+void MidiSendProcessor::prepareOutputs(const vector<MidiPortInfo>& portsInfo)
 {
     m_outputs.clear();
-    for (auto& outputName : outputNames) {
+    for (auto& output : portsInfo) {
         try {
-            auto midiOut = make_unique<MidiOut>(outputName);
+            auto midiOut = make_unique<MidiOut>(output.portName, output.normalizedPortName, output.portId);
             m_outputs.push_back(std::move(midiOut));
         }
         catch (const RtMidiError& e) {
-            cout << "Could not open output device " << outputName << ": " << e.what() << endl;
+            cout << "Could not open output device " << output.portName << ": " << e.what() << endl;
             //throw;
         }
     }
@@ -88,7 +88,7 @@ void MidiSendProcessor::run()
     while (!g_threadsShouldFinish){
         bool available = m_messages.wait_dequeue_timed(msg, std::chrono::milliseconds(500));
         if (available && !m_flushing){
-            processMessage(msg);            
+            processMessage(msg);
         }
     }
 }

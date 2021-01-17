@@ -32,6 +32,7 @@
 #include "version.h"
 #include "utils.h"
 #include "monitorlogger.h"
+#include "midi_port_info.h"
 
 static int g_monitor_level = 6;
 
@@ -57,9 +58,9 @@ static atomic<bool> g_already_initialized { false };
 void prepareMidiSendProcessorOutputs(unique_ptr<MidiSendProcessor>& midiSendProcessor)
 {
     // Open all MIDI devices. This is what Sonic Pi does
-    vector<string> midiOutputsToOpen = MidiOut::getNonRtMidiOutputNames();
+    vector<MidiPortInfo> connectedOutputPortsInfo = MidiIn::getInputPortInfo();
     {
-        midiSendProcessor->prepareOutputs(midiOutputsToOpen);
+        midiSendProcessor->prepareOutputs(connectedOutputPortsInfo);
     }
 }
 
@@ -67,15 +68,15 @@ void prepareMidiSendProcessorOutputs(unique_ptr<MidiSendProcessor>& midiSendProc
 void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
 {
     // Should we open all devices, or just the ones passed as parameters?
-    vector<string> midiInputsToOpen = MidiIn::getNonRtMidiInputNames();
+    vector<MidiPortInfo> connectedInputPortsInfo = MidiIn::getInputPortInfo();
 
     midiInputs.clear();
-    for (const auto& input : midiInputsToOpen) {
+    for (const auto& input : connectedInputPortsInfo) {
         try {
-            auto midiInput = make_unique<MidiIn>(input, false);
+            auto midiInput = make_unique<MidiIn>(input.portName, input.normalizedPortName, input.portId, false);
             midiInputs.push_back(std::move(midiInput));
         } catch (const RtMidiError& e) {
-            cout << "Could not open input device " << input << ": " << e.what() << endl;
+            cout << "Could not open input device " << input.portName << ": " << e.what() << endl;
             //throw;
         }
     }
@@ -185,7 +186,7 @@ static char **vector_str_to_c(const vector<string>& vector_str)
 
 char **sp_midi_outs(int *n_list)
 {
-    auto outputs = MidiOut::getNonRtMidiOutputNames();
+    auto outputs = MidiOut::getNormalizedOutputNames();
     char **c_str_list = vector_str_to_c(outputs);
     *n_list = (int)outputs.size();
     return c_str_list;
@@ -193,7 +194,7 @@ char **sp_midi_outs(int *n_list)
 
 char **sp_midi_ins(int *n_list)
 {
-    auto inputs = MidiIn::getNonRtMidiInputNames();
+    auto inputs = MidiIn::getNormalizedInputNames();
     char **c_str_list = vector_str_to_c(inputs);
     *n_list = (int)inputs.size();
     return c_str_list;

@@ -4,6 +4,7 @@
 #include <string>
 #include "midiin.h"
 #include "midisendprocessor.h"
+#include "midi_port_info.h"
 
 extern std::atomic<bool> g_threadsShouldFinish;
 
@@ -17,38 +18,53 @@ class HotPlugThread
 {
 public:
     ~HotPlugThread()
-    {
-        if (m_thread.joinable()){
-            m_thread.join();
+        {
+            if (m_thread.joinable()){
+                m_thread.join();
+            }
         }
-    }
 
     void startThread(){
         m_thread = std::thread(&HotPlugThread::run, this);
     }
 
     void run()
-    {
-        std::vector<std::string> lastAvailableInputPorts = MidiIn::getInputNames();
-        std::vector<std::string> lastAvailableOutputPorts = MidiOut::getOutputNames();
-        while (!g_threadsShouldFinish){
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            auto newAvailableInputPorts = MidiIn::getInputNames();
-            // Was something added or removed?
-            if (newAvailableInputPorts != lastAvailableInputPorts) {
-                prepareMidiInputs(midiInputs);
-                lastAvailableInputPorts = newAvailableInputPorts;
-            }
+        {
+            std::vector<MidiPortInfo> lastAvailableInputPorts = MidiIn::getInputPortInfo();
+            std::vector<MidiPortInfo> lastAvailableOutputPorts = MidiOut::getOutputPortInfo();
 
-            auto newAvailableOutputPorts = MidiOut::getOutputNames();
-            // Was something added or removed?
-            if (newAvailableOutputPorts != lastAvailableOutputPorts) {
-                prepareMidiSendProcessorOutputs(midiSendProcessor);
-                lastAvailableOutputPorts = newAvailableOutputPorts;
-            }
+            while (!g_threadsShouldFinish){
 
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+                auto newAvailableInputPorts = MidiIn::getInputPortInfo();
+                // Was something added or removed?
+                if(!((newAvailableInputPorts.size() == lastAvailableInputPorts.size()) &&
+                     (std::equal(newAvailableInputPorts.begin(), newAvailableInputPorts.end(), lastAvailableInputPorts.begin())))) {
+                    try {
+                        prepareMidiInputs(midiInputs);
+                    } catch (const std::out_of_range&) {
+                        std::cout << "Error opening MIDI inputs" << std::endl;
+                    }
+                    lastAvailableInputPorts = newAvailableInputPorts;
+                }
+
+                auto newAvailableOutputPorts = MidiOut::getOutputPortInfo();
+                // Was something added or removed?
+                if(!((newAvailableOutputPorts.size() == lastAvailableOutputPorts.size()) &&
+                     (std::equal(newAvailableOutputPorts.begin(), newAvailableOutputPorts.end(), lastAvailableOutputPorts.begin())))) {
+                    try {
+                        prepareMidiSendProcessorOutputs(midiSendProcessor);
+                    } catch (const std::out_of_range&) {
+                        std::cout << "Error opening MIDI outputs" << std::endl;
+                    }
+
+                    lastAvailableOutputPorts = newAvailableOutputPorts;
+                }
+
+            }
         }
-    }
+
 private:
     std::thread m_thread;
 };
