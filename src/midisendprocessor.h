@@ -40,13 +40,13 @@ private:
         std::vector<unsigned char> midi;
     } MidiDeviceAndMessage;
 
-public:    
+public:
     MidiSendProcessor() : m_flushing(false) {};
     ~MidiSendProcessor();
 
     void startThread();
 
-    void prepareOutputs(const std::vector<std::string>& outputNames);
+    void prepareOutputs(const std::vector<MidiPortInfo>& portsInfo);
 
     void processMessage(const MidiDeviceAndMessage& message_from_c);
 
@@ -73,6 +73,3 @@ private:
     std::atomic<bool> m_flushing;
     void run();
 };
-
-
-

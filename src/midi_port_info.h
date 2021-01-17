@@ -20,32 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
 #pragma once
 
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
-#include <rtmidi/RtMidi.h>
-#include "midicommon.h"
+struct MidiPortInfo
+{
+  std::string portName;
+  std::string normalizedPortName;
+  int portId;
 
-// This class manages a MIDI output device
-class MidiOut : public MidiCommon {
-public:
-    MidiOut(const std::string& portName, const std::string& normalizedPortName, int portId);
-    MidiOut(const MidiOut&) = delete;
-    MidiOut& operator=(const MidiOut&) = delete;
-
-    ~MidiOut();
-
-    void send(const std::vector< unsigned char >* msg);
-
-    static std::vector<std::string> getNormalizedOutputNames();
-    static std::vector<MidiPortInfo> getOutputPortInfo();
-protected:
-
-
-private:
-    std::unique_ptr<RtMidiOut> m_midiOut;
-    int m_midiPortNumber;
+  bool operator==( const MidiPortInfo& rhs) const {
+    return (portName == rhs.portName) &&
+    (normalizedPortName == rhs.normalizedPortName) &&
+    (portId == rhs.portId);
+  }
 };
