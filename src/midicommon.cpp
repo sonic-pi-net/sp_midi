@@ -84,7 +84,7 @@ std::vector<MidiPortInfo> MidiCommon::getPortInfo(RtMidi& ports)
 
         if (name.rfind("rtmidi_", 0) == 0) {
             // The fact that the port name starts with rtmidi tells us that
-            // this is a virtual midi port namecreated by RtMidi - ignore it
+            // this is a virtual midi port name created by RtMidi - ignore it
         } else {
 
             auto normalizedPortName = name;
@@ -123,7 +123,7 @@ vector<string> MidiCommon::getNormalizedNamesFromPortInfos(std::vector<MidiPortI
 {
     vector<string> all_names;
 
-    for (int i = 0; i < info.size() ; i++) {
+    for (int i = 0; i < info.size(); i++) {
         auto s = info[i];
         all_names.push_back(s.normalizedPortName);
     }
