@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016 Luis Lloret
+// Copyright (c) 2016-2021 Luis Lloret
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,6 @@ void MidiIn::staticMidiCallback(double timeStamp, std::vector< unsigned char > *
 }
 
 
-int send_midi_osc_to_erlang(const char* device_name, const unsigned char* data, size_t size);
 void MidiIn::midiCallback(double timeStamp, std::vector< unsigned char > *midiMessage)
 {
     lock_guard<mutex> lock(m_cb_mutex);
@@ -81,7 +80,7 @@ void MidiIn::midiCallback(double timeStamp, std::vector< unsigned char > *midiMe
         m_logger.info("   [{:02x}]", (*midiMessage)[i]);
     }
     // And send the message to the erlang process
-    send_midi_osc_to_erlang(getNormalizedPortName().c_str(), midiMessage->data(), midiMessage->size());
+    send_midi_data_to_erlang(getNormalizedPortName().c_str(), midiMessage->data(), midiMessage->size());
 }
 
 vector<MidiPortInfo> MidiIn::getInputPortInfo()
