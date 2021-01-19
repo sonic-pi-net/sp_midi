@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016-2020 Luis Lloret
+// Copyright (c) 2016-2021 Luis Lloret
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,6 +83,7 @@ void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
 }
 
 
+// This was used for some timing tests. Leave it here for reference, in case it is useful in the future
 struct timestamp {
     char type;
     int id;
@@ -321,7 +322,7 @@ ERL_NIF_TERM sp_midi_get_current_time_microseconds_nif(ErlNifEnv* env, int argc,
     return enif_make_int64(env, sp_midi_get_current_time_microseconds());
 }
 
-int send_midi_osc_to_erlang(const char *device_name, const unsigned char *data, size_t size)
+int send_midi_data_to_erlang(const char *device_name, const unsigned char *data, size_t size)
 {
     ErlNifEnv *msg_env = enif_alloc_env();
     ERL_NIF_TERM term1;
