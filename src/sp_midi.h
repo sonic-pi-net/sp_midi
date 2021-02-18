@@ -48,6 +48,18 @@ extern "C" {
     DllExport void sp_midi_deinit();
 
     /**
+     * Open all MIDI inputs.
+     */
+    DllExport int sp_midi_open_all_inputs();
+
+    /**
+     * Open some MIDI inputs based on normalized names.
+     *
+     * @param input_names: the normalized names of the inputs to open
+     */
+    DllExport int sp_midi_open_some_inputs(char **input_names, int len);
+
+    /**
      * Send a MIDI message to the MIDI outputs.
      *
      * @param device_name: the name of the target device
@@ -65,13 +77,20 @@ extern "C" {
     DllExport char **sp_midi_outs(int *n_list);
 
     /**
-     * Get the list of input devices.
+     * Get the list of all input devices.
      *
      * @param n_list: output parameter to indicate the number of devices found
      * @return the list of devices as a pointer to a pointer to chars
      */
-    DllExport char **sp_midi_ins(int *n_list);
+    DllExport char **sp_midi_all_ins(int *n_list);
 
+    /**
+     * Get the list of selected input devices.
+     *
+     * @param n_list: output parameter to indicate the number of devices found
+     * @return the list of devices as a pointer to a pointer to chars
+     */
+    DllExport char **sp_midi_selected_ins(int *n_list);
 
 
 
@@ -118,11 +137,18 @@ extern "C" {
 	DllExport ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
     /**
-     * Get the list of input devices.
+     * Get the list of all input devices.
      *
      * It returns a string list to erlang.
      */
-    DllExport ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+    DllExport ERL_NIF_TERM sp_midi_all_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+
+    /**
+     * Get the list of selected input devices.
+     *
+     * It returns a string list to erlang.
+     */
+    DllExport ERL_NIF_TERM sp_midi_selected_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
     /**
      * This must be called from the MIDI processing process in erlang, so that the C side can capture its PID.

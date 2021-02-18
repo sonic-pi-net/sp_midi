@@ -24,8 +24,11 @@
 #include <chrono>
 #include <iostream>
 #include <atomic>
+#include <vector>
+#include <algorithm>
 #include "sp_midi.h"
 #include "hotplug_thread.h"
+#include "midiinputs.h"
 #include "midiout.h"
 #include "midiin.h"
 #include "midisendprocessor.h"
@@ -34,18 +37,14 @@
 #include "monitorlogger.h"
 #include "midi_port_info.h"
 
-static int g_monitor_level = 6;
-
 using namespace std;
+
+static int g_monitor_level = 6;
 
 // FIXME: need to test what happens when MIDI devices are already in use by another application
 // and sp_midi cannot open them
 // MIDI out
 std::unique_ptr<MidiSendProcessor> midiSendProcessor;
-
-// MIDI in
-vector<unique_ptr<MidiIn> > midiInputs;
-
 
 // Threading
 HotPlugThread *hotplug_thread = nullptr;
@@ -64,23 +63,33 @@ void prepareMidiSendProcessorOutputs(unique_ptr<MidiSendProcessor>& midiSendProc
     }
 }
 
-
-void prepareMidiInputs(vector<unique_ptr<MidiIn> >& midiInputs)
+int sp_midi_open_all_inputs()
 {
-    // Should we open all devices, or just the ones passed as parameters?
-    vector<MidiPortInfo> connectedInputPortsInfo = MidiIn::getInputPortInfo();
-
-    midiInputs.clear();
-    for (const auto& input : connectedInputPortsInfo) {
-        try {
-            auto midiInput = make_unique<MidiIn>(input.portName, input.normalizedPortName, input.portId, false);
-            midiInputs.push_back(std::move(midiInput));
-        } catch (const RtMidiError& e) {
-            cout << "Could not open input device " << input.portName << ": " << e.what() << endl;
-            //throw;
-        }
+    // Prepare the MIDI inputs
+    try{
+        MidiInputs::getInstance().prepareMidiInputs(true, vector<string>());
+    } catch (const std::out_of_range&) {
+        cout << "Error opening MIDI inputs" << endl;
+        return -1;
     }
+    return 0;
 }
+
+int sp_midi_open_some_inputs(char **input_names, int len)
+{
+    vector<string> selected_midi_inputs;    
+    for (int i = 0; i < len; i++){
+        selected_midi_inputs.push_back(input_names[i]);
+    }
+    try{
+        MidiInputs::getInstance().prepareMidiInputs(false, selected_midi_inputs);
+    } catch (const std::out_of_range&) {
+        cout << "Error opening MIDI inputs" << endl;
+        return -1;
+    }
+    return 0;
+}
+
 
 
 // This was used for some timing tests. Leave it here for reference, in case it is useful in the future
@@ -136,14 +145,6 @@ int sp_midi_init()
         return -1;
     }
 
-    // Prepare the MIDI inputs
-    try{
-        prepareMidiInputs(midiInputs);
-    } catch (const std::out_of_range&) {
-        cout << "Error opening MIDI inputs" << endl;
-        return -1;
-    }
-
     midiSendProcessor->startThread();
 
     hotplug_thread = new HotPlugThread;
@@ -167,7 +168,6 @@ void sp_midi_deinit()
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // And we stop them
-    midiInputs.clear();
     midiSendProcessor.reset(nullptr);
     delete hotplug_thread;
 }
@@ -193,9 +193,17 @@ char **sp_midi_outs(int *n_list)
     return c_str_list;
 }
 
-char **sp_midi_ins(int *n_list)
+char **sp_midi_all_ins(int *n_list)
 {
     auto inputs = MidiIn::getNormalizedInputNames();
+    char **c_str_list = vector_str_to_c(inputs);
+    *n_list = (int)inputs.size();
+    return c_str_list;
+}
+
+char **sp_midi_selected_ins(int *n_list)
+{
+    auto inputs = MidiInputs::getInstance().getSelectedMidiInputs();
     char **c_str_list = vector_str_to_c(inputs);
     *n_list = (int)inputs.size();
     return c_str_list;
@@ -243,6 +251,47 @@ ERL_NIF_TERM sp_midi_deinit_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return enif_make_atom(env, "ok");
 }
 
+ERL_NIF_TERM sp_midi_open_all_inputs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int ret = sp_midi_open_all_inputs();
+    return enif_make_atom(env, "ok");
+}
+
+ERL_NIF_TERM sp_midi_open_some_inputs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    unsigned int len;
+    int ret = enif_get_list_length(env, argv[0], &len);
+    if (!ret){
+        return enif_make_badarg(env);
+    }
+    char **c_str_list = (char **)malloc(len * sizeof(char*));
+
+    const ERL_NIF_TERM *list = &argv[0];
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail;
+    char device_name[256];
+    int i = 0;
+    while (enif_get_list_cell(env, *list, &head, &tail)){
+        int str_len = enif_get_string(env, head, device_name, 256, ERL_NIF_LATIN1);
+        if (!str_len){
+            return enif_make_badarg(env);
+        }  
+        c_str_list[i] = (char*)malloc(str_len * sizeof(char));
+        strcpy(c_str_list[i], device_name);
+        list = &tail;
+        i++;
+    }
+
+    ret = sp_midi_open_some_inputs(c_str_list, len);
+    for (unsigned int j = 0; j < len; j++) {
+        free(c_str_list[j]);
+    }
+    free(c_str_list);
+
+    return enif_make_atom(env, "ok");
+}
+
+
 ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary bin;
@@ -282,10 +331,17 @@ ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return c_str_list_to_erlang(env, n_midi_outs, midi_outs);
 }
 
-ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM sp_midi_all_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int n_midi_ins;
-    char **midi_ins = sp_midi_ins(&n_midi_ins);
+    char **midi_ins = sp_midi_all_ins(&n_midi_ins);
+    return c_str_list_to_erlang(env, n_midi_ins, midi_ins);
+}
+
+ERL_NIF_TERM sp_midi_selected_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int n_midi_ins;
+    char **midi_ins = sp_midi_selected_ins(&n_midi_ins);
     return c_str_list_to_erlang(env, n_midi_ins, midi_ins);
 }
 
@@ -345,10 +401,13 @@ int send_midi_data_to_erlang(const char *device_name, const unsigned char *data,
 static ErlNifFunc nif_funcs[] = {
     {"midi_init", 0, sp_midi_init_nif},
     {"midi_deinit", 0, sp_midi_deinit_nif},
+    {"midi_open_all_inputs", 0, sp_midi_open_all_inputs_nif},
+    {"midi_open_some_inputs", 1, sp_midi_open_some_inputs_nif},
     {"midi_send", 2, sp_midi_send_nif},
     {"midi_flush", 0, sp_midi_flush_nif},
     {"midi_outs", 0, sp_midi_outs_nif},
-    {"midi_ins", 0, sp_midi_ins_nif},
+    {"midi_all_ins", 0, sp_midi_all_ins_nif},
+    {"midi_selected_ins", 0, sp_midi_selected_ins_nif},
     {"have_my_pid", 0, sp_midi_have_my_pid_nif},
     {"set_this_pid", 1, sp_midi_set_this_pid_nif},
     {"set_log_level", 1, sp_midi_set_log_level_nif},

@@ -39,7 +39,7 @@ test_get_current_time_microseconds(Count, SleepMillis) ->
 list_devices(0) ->
     done;
 list_devices(N) ->
-    INS = sp_midi:midi_ins(),
+    INS = sp_midi:midi_all_ins(),
     OUTS = sp_midi:midi_outs(),
     io:fwrite("MIDI INs:~p~n", [INS]),
     io:fwrite("MIDI OUTs:~p~n", [OUTS]),
@@ -61,6 +61,8 @@ start() ->
     %Moff = << Aoff/binary, <<0, 44, 105, 105, 105, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 64, 0, 0, 0, 100>>/binary >>,
 
     sp_midi:midi_init(),
+    %sp_midi:midi_open_all_inputs(),
+    sp_midi:midi_open_some_inputs(["nanokey2_1_keyboard_0"]),
 
     %T = sp_midi:get_current_time_microseconds(),
     %Tcallbacks = [T + 3000000, T + 3000000 + 10000, T + 3000000 + 10001, T + 3000000 + 11000, T + 3000000 + 30000],

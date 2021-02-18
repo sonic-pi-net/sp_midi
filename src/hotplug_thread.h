@@ -25,14 +25,13 @@
 #include <memory>
 #include <string>
 #include "midiin.h"
+#include "midiinputs.h"
 #include "midisendprocessor.h"
 #include "midi_port_info.h"
 
 extern std::atomic<bool> g_threadsShouldFinish;
 
 // FIXME: this should go into a header file
-void prepareMidiInputs(std::vector<std::unique_ptr<MidiIn> >& midiInputs);
-extern std::vector<std::unique_ptr<MidiIn> > midiInputs;
 void prepareMidiSendProcessorOutputs(std::unique_ptr<MidiSendProcessor>& midiSendProcessor);
 extern std::unique_ptr<MidiSendProcessor> midiSendProcessor;
 
@@ -64,7 +63,7 @@ public:
             if(!((newAvailableInputPorts.size() == lastAvailableInputPorts.size()) &&
                     (std::equal(newAvailableInputPorts.begin(), newAvailableInputPorts.end(), lastAvailableInputPorts.begin())))) {
                 try {
-                    prepareMidiInputs(midiInputs);
+                    MidiInputs::getInstance().prepareMidiInputs();
                 } catch (const std::out_of_range&) {
                     std::cout << "Error opening MIDI inputs" << std::endl;
                 }

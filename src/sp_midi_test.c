@@ -26,7 +26,7 @@ int main()
         free(midi_outs);
 
         int n_ins;
-        char** midi_ins = sp_midi_ins(&n_ins);
+        char** midi_ins = sp_midi_all_ins(&n_ins);
         for (int i = 0; i < n_ins; i++) {
             printf("%d: %s\n", i, midi_ins[i]);
         }
