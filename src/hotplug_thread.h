@@ -35,6 +35,7 @@ void prepareMidiInputs(std::vector<std::unique_ptr<MidiIn> >& midiInputs);
 extern std::vector<std::unique_ptr<MidiIn> > midiInputs;
 void prepareMidiSendProcessorOutputs(std::unique_ptr<MidiSendProcessor>& midiSendProcessor);
 extern std::unique_ptr<MidiSendProcessor> midiSendProcessor;
+int send_hotplug_event_to_erlang();
 
 class HotPlugThread
 {
@@ -68,7 +69,9 @@ public:
                 } catch (const std::out_of_range&) {
                     std::cout << "Error opening MIDI inputs" << std::endl;
                 }
+                
                 lastAvailableInputPorts = newAvailableInputPorts;
+                send_hotplug_event_to_erlang();
             }
 
             auto newAvailableOutputPorts = MidiOut::getOutputPortInfo();
@@ -82,6 +85,7 @@ public:
                 }
 
                 lastAvailableOutputPorts = newAvailableOutputPorts;
+                send_hotplug_event_to_erlang();
             }
 
         }

@@ -104,6 +104,7 @@ void print_time_stamp(char type)
     timestamps.push_back(ts);
 }
 
+
 void output_time_stamps()
 {
     for (auto ts : timestamps) {
@@ -119,12 +120,14 @@ int sp_midi_send(const char* device_name, const unsigned char* c_message, unsign
     return 0;
 }
 
+
 int sp_midi_init()
 {
     if (g_already_initialized){
         return 0;
     }
     g_already_initialized = true;
+    g_threadsShouldFinish = false;
     MonitorLogger::getInstance().setLogLevel(g_monitor_level);
 
     midiSendProcessor = make_unique<MidiSendProcessor>();
@@ -152,6 +155,7 @@ int sp_midi_init()
     return 0;
 }
 
+
 void sp_midi_deinit()
 {
     if (!g_already_initialized){
@@ -172,6 +176,7 @@ void sp_midi_deinit()
     delete hotplug_thread;
 }
 
+
 static char **vector_str_to_c(const vector<string>& vector_str)
 {
     char **c_str_list;
@@ -185,6 +190,7 @@ static char **vector_str_to_c(const vector<string>& vector_str)
     return c_str_list;
 }
 
+
 char **sp_midi_outs(int *n_list)
 {
     auto outputs = MidiOut::getNormalizedOutputNames();
@@ -193,6 +199,7 @@ char **sp_midi_outs(int *n_list)
     return c_str_list;
 }
 
+
 char **sp_midi_ins(int *n_list)
 {
     auto inputs = MidiIn::getNormalizedInputNames();
@@ -200,6 +207,7 @@ char **sp_midi_ins(int *n_list)
     *n_list = (int)inputs.size();
     return c_str_list;
 }
+
 
 long long sp_midi_get_current_time_microseconds()
 {
@@ -237,11 +245,13 @@ ERL_NIF_TERM sp_midi_init_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return enif_make_atom(env, "ok");
 }
 
+
 ERL_NIF_TERM sp_midi_deinit_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     sp_midi_deinit();
     return enif_make_atom(env, "ok");
 }
+
 
 ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -268,6 +278,7 @@ ERL_NIF_TERM sp_midi_send_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return enif_make_atom(env, "ok");
 }
 
+
 ERL_NIF_TERM sp_midi_flush_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     midiSendProcessor->flushMessages();
@@ -282,12 +293,14 @@ ERL_NIF_TERM sp_midi_outs_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return c_str_list_to_erlang(env, n_midi_outs, midi_outs);
 }
 
+
 ERL_NIF_TERM sp_midi_ins_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int n_midi_ins;
     char **midi_ins = sp_midi_ins(&n_midi_ins);
     return c_str_list_to_erlang(env, n_midi_ins, midi_ins);
 }
+
 
 ERL_NIF_TERM sp_midi_have_my_pid_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -322,6 +335,7 @@ ERL_NIF_TERM sp_midi_get_current_time_microseconds_nif(ErlNifEnv* env, int argc,
     return enif_make_int64(env, sp_midi_get_current_time_microseconds());
 }
 
+
 int send_midi_data_to_erlang(const char *device_name, const unsigned char *data, size_t size)
 {
     ErlNifEnv *msg_env = enif_alloc_env();
@@ -337,6 +351,18 @@ int send_midi_data_to_erlang(const char *device_name, const unsigned char *data,
 
     term4 = enif_make_tuple3(msg_env, term1, term2, term3);
     int rc = enif_send(NULL, &midi_process_pid, msg_env, term4);
+    enif_free_env(msg_env);
+    return rc;
+}
+
+
+int send_hotplug_event_to_erlang()
+{
+    ErlNifEnv *msg_env = enif_alloc_env();
+    ERL_NIF_TERM term1;
+
+    term1 = enif_make_atom(msg_env, "midi_hotplug");
+    int rc = enif_send(NULL, &midi_process_pid, msg_env, term1);
     enif_free_env(msg_env);
     return rc;
 }

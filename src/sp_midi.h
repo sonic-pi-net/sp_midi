@@ -78,15 +78,22 @@ extern "C" {
     /************** Functions for the erlang integration below ***************/
 
     /**
-     * Send the MIDI in event to the erlang process as binary data. Will use enif_send() to send
-     * the data to the erlang process
+     * Send the MIDI in event to the erlang process as binary data. 
      *
      * @param device_name: name of the device that got the data
      * @param data: pointer to the message (this is a binary message that might contain 0s in the middle)
      * @param size: size of the message. This is required since we cannot count on 0s to indicate its end
-     * @return the list of devices as a pointer to a pointer to chars
+     * @return success status
      */
     int send_midi_data_to_erlang(const char *device_name, const unsigned char *data, size_t size);
+
+
+    /**
+     * Send the hotplug event to the erlang process to indicate a change in the connected devices.
+     * 
+     * @return success status
+     */
+    int send_hotplug_event_to_erlang();
 
     // Erlang NIFs. The NIF parameters are always the same, I will only explain the parameters as unpacked from erlang.
     // Note that the only NIF that passes data is sp_midi_send_nif(), the rest do not pass anything, and are simple

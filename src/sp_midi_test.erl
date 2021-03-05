@@ -8,6 +8,8 @@ midi_process() ->
     receive
         {midi_in, Device, <<Midi_event/binary>>} ->
             io:format("Received midi_in message~n->~p: ~p~n", [Device, Midi_event]);
+        midi_hotplug ->
+            io:format("Received a hotplug event~n");
         X ->
             io:format("Received something (not what was expected)->~p~n", [X])
 
@@ -82,7 +84,7 @@ start() ->
     %INS = sp_midi:midi_ins(),
     %OUTS = sp_midi:midi_outs(),
 
-    list_devices(10),
+    %list_devices(10),
 
 
     %io:fwrite("MIDI INs:~p~n", [INS]),
@@ -97,7 +99,7 @@ start() ->
     %io:fwrite("Sending note OFF~n"),
     %sp_midi:midi_send(Moff),
 
-    io:fwrite("Waiting 10 seconds~n"),
-    timer:sleep(10000),
+    io:fwrite("Waiting 20 seconds~n"),
+    timer:sleep(20000),
 
     sp_midi:midi_deinit().
