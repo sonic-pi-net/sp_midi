@@ -64,8 +64,7 @@ void MidiOut::send(const std::vector< unsigned char >* msg)
 
 vector<MidiPortInfo> MidiOut::getOutputPortInfo()
 {
-    RtMidiOut outs;
-    auto outs_info = getPortInfo(outs);
+    auto outs_info = getPortInfo(m_outputToListPorts);
     return outs_info;
 }
 
@@ -74,3 +73,5 @@ vector<string> MidiOut::getNormalizedOutputNames()
     vector<MidiPortInfo> info = getOutputPortInfo();
     return getNormalizedNamesFromPortInfos(info);
 }
+
+RtMidiOut MidiOut::m_outputToListPorts;

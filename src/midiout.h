@@ -42,10 +42,10 @@ public:
 
     static std::vector<std::string> getNormalizedOutputNames();
     static std::vector<MidiPortInfo> getOutputPortInfo();
-protected:
-
 
 private:
     std::unique_ptr<RtMidiOut> m_midiOut;
     int m_midiPortNumber;
+
+    static RtMidiOut m_outputToListPorts;
 };

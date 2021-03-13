@@ -40,8 +40,7 @@ public:
     static std::vector<std::string> getNormalizedInputNames();
     static std::vector<MidiPortInfo> getInputPortInfo();
 
-protected:
-
+private:
     std::unique_ptr<RtMidiIn> m_midiIn;
     std::mutex m_cb_mutex;
     static void staticMidiCallback(double timeStamp, std::vector< unsigned char > *message, void *userData);
@@ -50,4 +49,5 @@ protected:
     // TODO: do we need to send the raw message to Sonic Pi?
     bool m_oscRawMidiMessage;
 
+    static RtMidiIn m_inputToListPorts;
 };

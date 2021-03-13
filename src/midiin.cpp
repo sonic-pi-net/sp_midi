@@ -93,9 +93,8 @@ void MidiIn::midiCallback(double timeStamp, std::vector< unsigned char > *midiMe
 }
 
 vector<MidiPortInfo> MidiIn::getInputPortInfo()
-{
-    RtMidiIn ins;
-    auto ins_info = getPortInfo(ins);
+{    
+    auto ins_info = getPortInfo(m_inputToListPorts);
     return ins_info;
 }
 
@@ -104,3 +103,5 @@ vector<string> MidiIn::getNormalizedInputNames()
     vector<MidiPortInfo> info = getInputPortInfo();
     return getNormalizedNamesFromPortInfos(info);
 }
+
+RtMidiIn MidiIn::m_inputToListPorts;
