@@ -1,7 +1,7 @@
 -module(sp_midi).
 -export([midi_init/0, midi_deinit/0, midi_open_all_inputs/0, midi_open_some_inputs/1, midi_send/2, midi_flush/0,
-    midi_all_ins/0, midi_selected_ins/0, midi_outs/0, have_my_pid/0, set_this_pid/1, set_log_level/1,
-    get_current_time_microseconds/0]).
+    midi_all_ins/0, midi_selected_ins/0, midi_outs/0, midi_refresh_devices/0, 
+    have_my_pid/0, set_this_pid/1, set_log_level/1, get_current_time_microseconds/0]).
 -on_load(init/0).
 
 init() ->
@@ -29,6 +29,8 @@ midi_all_ins() ->
 midi_selected_ins() ->
     exit(nif_library_not_loaded).
 midi_outs() ->
+    exit(nif_library_not_loaded).
+midi_refresh_devices() ->
     exit(nif_library_not_loaded).
 have_my_pid() ->
     exit(nif_library_not_loaded).
