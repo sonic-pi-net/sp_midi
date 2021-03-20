@@ -47,6 +47,7 @@ public:
     void startThread();
 
     void prepareOutputs(const std::vector<MidiPortInfo>& portsInfo);
+    void clear();
 
     void processMessage(const MidiDeviceAndMessage& message_from_c);
 

@@ -162,8 +162,9 @@ void sp_midi_deinit()
 
     // We give them some time to exit
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
+    
     // And we stop them
+    MidiInputs::getInstance().clear();
     midiSendProcessor.reset(nullptr);
 }
 
@@ -422,7 +423,6 @@ static ErlNifFunc nif_funcs[] = {
     {"midi_outs", 0, sp_midi_outs_nif},
     {"midi_all_ins", 0, sp_midi_all_ins_nif},
     {"midi_selected_ins", 0, sp_midi_selected_ins_nif},
-    {"midi_refresh_devices", 0, sp_midi_refresh_devices},
     {"midi_refresh_devices", 0, sp_midi_refresh_devices},
     {"have_my_pid", 0, sp_midi_have_my_pid_nif},
     {"set_this_pid", 1, sp_midi_set_this_pid_nif},

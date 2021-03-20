@@ -58,6 +58,10 @@ void MidiSendProcessor::prepareOutputs(const vector<MidiPortInfo>& portsInfo)
     }
 }
 
+void MidiSendProcessor::clear(){
+    m_outputs.clear();
+}
+
 // TODO: during initial testing to measure latency of async calls
 void print_time_stamp(char type);
 

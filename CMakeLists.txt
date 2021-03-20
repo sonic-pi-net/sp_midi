@@ -42,6 +42,7 @@ set(sp_midi_sources
     src/midiout.cpp
     src/midicommon.cpp
     src/midisendprocessor.cpp
+    src/midiinputs.cpp
     src/utils.cpp
 )
 
